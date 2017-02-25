@@ -75,7 +75,7 @@ class Shell {
      */
     public static function whoami() {
         if (! self::$user) {
-            self::$user = self::cmd("whoami");
+            self::$user = self::run("whoami");
         }
         return self::$user;
     }
