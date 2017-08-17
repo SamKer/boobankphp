@@ -1,4 +1,4 @@
 services:
     boobank:
-        class: Sam\BoobankBundle\Services\BooBank
+        class: Sam\BoobankBundle\Services\Boobank
         arguments: [ "%boobank.backend_file%"]

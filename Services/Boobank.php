@@ -11,7 +11,7 @@ namespace Sam\BoobankBundle\Services;
  *
  *
  */
-class BooBank {
+class Boobank {
 
 
 
@@ -128,6 +128,7 @@ class BooBank {
     public function __construct($sBackendsPath = false) {
         // dependances
         $this->shell = new Shell();
+
         // if (! $this->shell->isExistPaquet("weboob")) {
         // throw new \Exception("class php Boobank needs weboob command");
         // }
