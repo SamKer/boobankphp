@@ -4,4 +4,4 @@ services:
         arguments: []
     boobank:
         class: Sam\BoobankBundle\Services\Boobank
-        arguments: [ "%boobank.backend_file%", "@boobank.shell" ]
+        arguments: [ "@boobank.shell" ]

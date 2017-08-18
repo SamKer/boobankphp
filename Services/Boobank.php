@@ -1,6 +1,8 @@
 <?php
 namespace Sam\BoobankBundle\Services;
 
+use Symfony\Component\Filesystem\Filesystem;
+
 /**
  * Class d'extraction de données banquaire via l'utilitaire boobank, composant
  * de weboob
@@ -120,15 +122,20 @@ class Boobank {
     private $cmdPath = false;
 
     /**
+     * @var Filesystem
+     */
+    private $fs;
+
+    /**
      * crée le dossier local boobank pour d'éventuels exports
      *
-     * @param string $sBackendsPath
-     *        	chemin complet du backends
+     * @param Shell $shell
+     * @param string $sBinPath
      */
-    public function __construct($sBackendsPath = false, Shell $shell) {
+    public function __construct(Shell $shell, $sBinPath = "/usr/bin") {
         // dependances
         $this->shell = $shell;
-
+        $this->fs = new Filesystem();
 
 
         if (! $this->shell->isCommandAvailable("weboob")) {
@@ -137,18 +144,16 @@ class Boobank {
         if (! $this->shell->isCommandAvailable("boobank")) {
             throw new \Exception("class php Boobank needs boobank command");
         }
-            if (! $sBackendsPath) {
-            //if no backend, create default backend
+
+            //backend created by weboob at backend
             $this->sBackendsPath = "/home/" . $this->shell->whoami() . "/.config/weboob/backends";
-        } else {
-            if(file_exists($sBackendsPath)) {
-                $this->sBackendsPath = $sBackendsPath;
-            } else {
-                throw new \Exception("backend not found at: $sBackendsPath");
+
+            if(!file_exists($this->sBackendsPath)) {
+                $this->fs->touch($this->sBackendsPath);
             }
-        }
+
         // chemin commande
-        $this->cmdPath = "/usr/bin/";
+        $this->setBinPath($sBinPath);
     }
 
     /**
