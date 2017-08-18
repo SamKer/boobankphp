@@ -1,0 +1,14 @@
+# Boobank PHP
+
+tools for weboob/boobank usage in php
+
+## dependencies
+ - apt-get install weboob weboob-qt
+ - weboob-config-update
+
+default boobank command at /usr/bin
+ but you can define another bin path with 
+ $boobankService->setBinPath(/path/to/bin");
+
+## registered commands
+- boobank:backend:list

@@ -2,39 +2,35 @@
 
 namespace Sam\BoobankBundle\Command;
 
-use Sam\BoobankBundle\Services\BooBank;
+use Sam\BoobankBundle\Services\Boobank;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class BoobankBackendListCommand extends ContainerAwareCommand
+class BoobankAccountListCommand extends ContainerAwareCommand
 {
     /**
-     * @var BooBank
+     * @var Boobank
      */
     private $boobank;
     protected function configure()
     {
         $this
-            ->setName('boobank:backend:list')
-            ->setDescription('list backend')
-            ->addOption('name', null, InputArgument::OPTIONAL, 'backend name')
+            ->setName('boobank:account:list')
+            ->setDescription('List account')
+            ->addOption('name', null, InputOption::VALUE_REQUIRED, 'backend name')
         ;
-
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $backend = $input->getOption('name');
+        $backend = $input->getArgument('name');
         $this->boobank = $this->getContainer()->get('boobank');
 
-        $list = $this->boobank->getConnexions();
-        if($backend !== null){
-            $list = $this->boobank->getConnexion($backend);
-        }
-        dump($list);
+        $account = $this->boobank->listComptes($backend);
+dump($account);
         $output->writeln('Command result.');
     }
 

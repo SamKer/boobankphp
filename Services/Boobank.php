@@ -103,12 +103,12 @@ class Boobank {
      *
      * @var cmd
      */
-    const CMD_EXPORT_LIST_COMPTE = "#PATH_CMD#/boobank list -f csv";
+    const CMD_EXPORT_LIST_COMPTE = "#PATH_CMD#/boobank list -f csv --select label,iban,balance";
 
     /**
-     * Instance of RKT\Shell
+     * Instance of Shell
      *
-     * @var unknown
+     * @var Shell
      */
     private $shell = false;
 
@@ -125,20 +125,30 @@ class Boobank {
      * @param string $sBackendsPath
      *        	chemin complet du backends
      */
-    public function __construct($sBackendsPath = false) {
+    public function __construct($sBackendsPath = false, Shell $shell) {
         // dependances
-        $this->shell = new Shell();
+        $this->shell = $shell;
 
-        // if (! $this->shell->isExistPaquet("weboob")) {
-        // throw new \Exception("class php Boobank needs weboob command");
-        // }
-        if (! $sBackendsPath) {
+
+
+        if (! $this->shell->isCommandAvailable("weboob")) {
+         throw new \Exception("class php Boobank needs weboob command");
+         }
+        if (! $this->shell->isCommandAvailable("boobank")) {
+            throw new \Exception("class php Boobank needs boobank command");
+        }
+            if (! $sBackendsPath) {
+            //if no backend, create default backend
             $this->sBackendsPath = "/home/" . $this->shell->whoami() . "/.config/weboob/backends";
         } else {
-            $this->sBackendsPath = $sBackendsPath;
+            if(file_exists($sBackendsPath)) {
+                $this->sBackendsPath = $sBackendsPath;
+            } else {
+                throw new \Exception("backend not found at: $sBackendsPath");
+            }
         }
         // chemin commande
-        $this->cmdPath = "/home/" . $this->shell->whoami() . "/bin";
+        $this->cmdPath = "/usr/bin/";
     }
 
     /**
@@ -178,7 +188,6 @@ class Boobank {
      * Liste les comptes
      */
     public function listComptes($sIdBackEnd = false) {
-        $sIdBackEnd = strtoupper($sIdBackEnd);
         $aFile = $this->exportListeComptes();
         if(!is_array($aFile)) {
             if(preg_match("#Error#", $aFile)) {
@@ -358,6 +367,20 @@ class Boobank {
         }
         return $this->aBackEnds;
     }
+
+    /**
+     * Get backend parameters
+     * @param string $backend
+     * @return array|false
+     * @throws \Exception
+     */
+    public function getConnexion($backend) {
+        $this->getBackEnds();
+        if(!isset($this->aBackEnds[$backend])) {
+            throw new \Exception("backend $backend not found");
+        }
+        return $this->aBackEnds[$backend];
+}
 
     /**
      * Enregistre le backend dans on état actuel
