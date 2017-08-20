@@ -55,7 +55,9 @@ class Shell {
      */
     public static function whoami() {
         if (! self::$user) {
-            self::$user = self::run("whoami");
+            list($user, $op) = self::run("whoami");
+            self::$user = $user;
+
         }
         return self::$user;
     }
