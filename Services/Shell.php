@@ -23,8 +23,12 @@ class Shell {
      * @return array return, output
      */
     public function run($cmd) {
-        $return = exec($cmd, $output);
-        return array($return, $output);
+        //hiding output with redirect to temp file
+        //$cmd .= " > /tmp/output.boobank";
+        ob_start();
+        $return = exec($cmd, $output, $returnCode);
+        ob_end_clean();
+        return array($return, $output, $returnCode);
     }
 
 
@@ -36,8 +40,8 @@ class Shell {
      */
     public function isCommandAvailable($cmd) {
         $cmd="type $cmd";
-        list($return, $output) = self::run($cmd);
-        if(preg_match("#not found#", $return)) {
+        list($return, $output, $code) = self::run($cmd);
+        if($code === 1) {
             return false;
         }
         return true;

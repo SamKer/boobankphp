@@ -26,7 +26,7 @@ class BoobankAccountListCommand extends ContainerAwareCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $backend = $input->getArgument('name');
+        $backend = $input->getOption('name');
         $this->boobank = $this->getContainer()->get('boobank');
 
         $account = $this->boobank->listComptes($backend);

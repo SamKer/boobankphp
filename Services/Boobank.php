@@ -194,6 +194,7 @@ class Boobank {
      */
     public function listComptes($sIdBackEnd = false) {
         $aFile = $this->exportListeComptes();
+        dump("test");die;
         if(!is_array($aFile)) {
             if(preg_match("#Error#", $aFile)) {
                 throw new \Exception($aFile);
@@ -318,6 +319,8 @@ class Boobank {
         ), array(
             $this->cmdPath
         ), self::CMD_EXPORT_LIST_COMPTE);
+
+
         return $this->cmd($command, true);
     }
 
@@ -445,12 +448,18 @@ class Boobank {
      *
      * @param string $command
      */
-    private function cmd($command, $bOutput = false) {
-        if ($bOutput) {
-            return $this->shell->cmdOutput($command);
-        } else {
-            return $this->shell->cmd($command);
+    private function cmd($command) {
+        list($return, $output, $code) = $this->shell->run($command);
+        //test if command is boobank
+        if($code === 1) {
+            die('error');
+            //test if return error or update
+            if(preg_match("#ERROR#", $return)) {
+                throw new \Exception($return);
+            }
+
         }
+
     }
 }
 
