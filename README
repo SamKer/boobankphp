@@ -7,8 +7,9 @@ tools for weboob/boobank usage in php
  - weboob-config-update
 
 default boobank command at /usr/bin
- but you can define another bin path with 
- $boobankService->setBinPath(/path/to/bin");
-
+ but you can define another bin path in parameters.yml
+  boobank:
+        bin_path:"/usr/bin"
+        
 ## registered commands
 - boobank:backend:list
