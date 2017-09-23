@@ -1,5 +1,6 @@
 <?php
 namespace Sam\BoobankBundle\Services;
+
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\HttpFoundation\File\File;
@@ -10,7 +11,8 @@ use Symfony\Component\HttpFoundation\File\File;
  * @author samir.keriou
  *
  */
-class Shell {
+class Shell
+{
     /**
      * Log dir
      */
@@ -41,17 +43,18 @@ class Shell {
      * @var string
      */
     public static $user = false;
+
     public function __construct()
     {
         $this->fs = new Filesystem();
 
-        if(!$this->fs->exists(self::LOG_DIR)) {
+        if (!$this->fs->exists(self::LOG_DIR)) {
             $this->fs->mkdir(self::LOG_DIR);
         }
-        if(!$this->fs->exists($this->output)) {
+        if (!$this->fs->exists($this->output)) {
             $this->fs->touch($this->output);
         }
-        if(!$this->fs->exists($this->error)) {
+        if (!$this->fs->exists($this->error)) {
             $this->fs->touch($this->error);
         }
         $this->fileOutput = new File($this->output);
@@ -67,16 +70,19 @@ class Shell {
     /**
      * add log to command
      */
-private function addOPCommand() {
-    $this->cmd .= $this->opCommand;
-}
+    private function addOPCommand()
+    {
+        $this->cmd .= $this->opCommand;
+    }
+
     /**
      * Run command
      *
      * @param string $cmd bash command
      * @return array return, output
      */
-    public function run($cmd) {
+    public function run($cmd)
+    {
         //hiding output with redirect to temp file
         $this->cmd = $cmd;
         $this->addOPCommand();
@@ -88,12 +94,16 @@ private function addOPCommand() {
         /*if($returnCode !== 0) {
             throw new \Exception("command failed: " . trim($this->fileError->openFile('r')->fgets()));
         }*/
+        $output = trim(file_get_contents($this->output));
+        $error = str_replace("\n", ",", trim(file_get_contents($this->error)));
+
         $return = [
-            "cmd" =>  $this->cmd,
+            "cmd" => $this->cmd,
             "code" => $returnCode,
-            "output"=> trim($this->fileOutput->openFile('r')->fgets()),
-            "error"=> trim($this->fileError->openFile('r')->fgets()),
+            "output" => $output,//trim($this->fileOutput->openFile('r')->fgets()),
+            "error" => $error//trim($this->fileError->openFile('r')->fgets()),
         ];
+
         $this->lastCommand = $this->cmd;
         $this->cmd = "";
 
@@ -107,7 +117,8 @@ private function addOPCommand() {
      * @param string $cmd
      * @return boolean
      */
-    public function isCommandAvailable($cmd) {
+    public function isCommandAvailable($cmd)
+    {
         try {
             $cmd = "type $cmd";
             $result = self::run($cmd);
@@ -115,7 +126,7 @@ private function addOPCommand() {
                 return false;
             }
             return true;
-        }catch(\Exception $e) {
+        } catch (\Exception $e) {
             return false;
         }
     }
@@ -125,30 +136,27 @@ private function addOPCommand() {
      * @param $cmd
      * @return binpath or false
      */
-    public function getPathCommand($cmd) {
-            $cmd = "which $cmd";
-            $result = self::run($cmd);
-            if ($result["code"] !== 0) {
-                return $result["output"];
-            }
-            return false;
+    public function getPathCommand($cmd)
+    {
+        $cmd = "which $cmd";
+        $result = self::run($cmd);
+        if ($result["code"] !== 0) {
+            return $result["output"];
+        }
+        return false;
 
     }
-
-
-
-
-
 
 
     /**
      * Donne l'utilisateur
      * @return Ambigous <boolean, string>
      */
-    public function whoami() {
-        if (! self::$user) {
+    public function whoami()
+    {
+        if (!self::$user) {
             $result = $this->run("whoami");
-            if($result["output"] !== "") {
+            if ($result["output"] !== "") {
                 self::$user = $result["output"];
             } else {
                 throw new \Exception("command failed:" . $result['error']);
@@ -163,12 +171,20 @@ private function addOPCommand() {
      * @return mixed
      * @throws \Exception
      */
-    public function home() {
+    public function home()
+    {
         $result = $this->run("echo \$HOME");
-            if($result["output"] !== "") {
-                return $result["output"];
-            } else {
-                throw new \Exception("command failed:" . $result['error']);
-            }
+        if ($result["output"] !== "") {
+            return $result["output"];
+        } else {
+            throw new \Exception("command failed:" . $result['error']);
+        }
+    }
+
+    /**
+     * @return string path/to/ouput.log
+     */
+    public function getOutputFile() {
+        return $this->output;
     }
 }

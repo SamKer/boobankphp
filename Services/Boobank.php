@@ -2,6 +2,7 @@
 namespace Sam\BoobankBundle\Services;
 
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\HttpFoundation\File\File;
 
 /**
  * Class d'extraction de données banquaire via l'utilitaire boobank, composant
@@ -55,6 +56,7 @@ class Boobank
      * @var cmd
      */
     const CMD_EXPORT_HISTORY_COMPTE = "#PATH_CMD#/boobank history #IDCOMPTE#@#IDBACKEND# -f csv";
+
     /**
      * commande pour lister les comptes avec leur montant courant
      * liste de tous les backends
@@ -62,19 +64,28 @@ class Boobank
      * @var cmd
      */
     const CMD_EXPORT_LIST_COMPTE = "#PATH_CMD# list -f csv --select label,iban,balance";
+
     /**
      * Chemin du fichier backends servant de connexion à boobank dans repertoire
      * home du www-data
      *
      * @var string path file backends
      */
-    private $sBackendsPath = false;
+    private $sBackendsPath;
+
+    /**
+     * path to export csv file
+     * @var string
+     */
+    //private $exportPath;
+
     /**
      * Liste des backends
      *
      * @var array
      */
     private $aBackEnds = false;
+
     /**
      * Exemple model de backends
      *
@@ -88,6 +99,7 @@ class Boobank
             "password" => "pass"
         )
     );
+
     /**
      * Liste de clé pour les exports de données
      *
@@ -98,6 +110,7 @@ class Boobank
         'raw',
         'amount'
     );
+
     /**
      * Instance of Shell
      *
@@ -108,10 +121,18 @@ class Boobank
     /**
      * Chemin du bin user
      *
-     * @var string path to bin
+     * @var string path to bin weboob
      */
     private $cmdPathWeboob = false;
+
+    /**
+     * @var bool|string path to bin weboob-config
+     */
     private $cmdPathBoobank = false;
+
+    /**
+     * @var bool|string path to bin boobank
+     */
     private $cmdPathWeboobConfig = false;
 
     /**
@@ -125,7 +146,7 @@ class Boobank
      * @param Shell $shell
      * @param array $params
      */
-    public function __construct(Shell $shell, $params = ["bin_path"=>"/usr/bin"])
+    public function __construct(Shell $shell, $params = ["bin_path" => "/usr/bin"])
     {
         // dependances
         $this->shell = $shell;
@@ -133,21 +154,21 @@ class Boobank
 
         //define pathcommands-----------
         $this->cmdPathWeboob = $this->shell->getPathCommand("weboob");
-        if(!$this->cmdPathWeboob) {
+        if (!$this->cmdPathWeboob) {
             $this->cmdPathWeboob = $params["bin_path"] . "/weboob";
             if (!$this->fs->exists($this->cmdPathWeboob)) {
                 throw new \Exception("class php Boobank needs weboob command");
             }
         }
         $this->cmdPathWeboobConfig = $this->shell->getPathCommand("weboob-config");
-        if(!$this->cmdPathWeboobConfig) {
+        if (!$this->cmdPathWeboobConfig) {
             $this->cmdPathWeboobConfig = $params["bin_path"] . "/weboob-config";
             if (!$this->fs->exists($this->cmdPathWeboobConfig)) {
                 throw new \Exception("class php Boobank needs weboob-config command");
             }
         }
         $this->cmdPathBoobank = $this->shell->getPathCommand("boobank");
-        if(!$this->cmdPathBoobank) {
+        if (!$this->cmdPathBoobank) {
             $this->cmdPathBoobank = $params["bin_path"] . "/boobank";
             if (!$this->fs->exists($this->cmdPathBoobank)) {
                 throw new \Exception("class php Boobank needs boobank command");
@@ -169,14 +190,17 @@ class Boobank
 
         //backend created by weboob at backend
         $this->sBackendsPath = $this->shell->home() . "/.config/weboob/backends";
-
         if (!$this->fs->exists($this->sBackendsPath)) {
             $this->fs->touch($this->sBackendsPath);
         }
-
-
+        /*
+                //export file
+                $this->exportPath = $this->shell->home() . "/.config/weboob/export.csv";
+                if (!$this->fs->exists($this->exportPath)) {
+                    $this->fs->touch($this->exportPath);
+                }
+        */
     }
-
 
 
     /**
@@ -211,39 +235,14 @@ class Boobank
     public function listComptes($sIdBackEnd = false)
     {
         $result = $this->exportListeComptes();
-        if($result['code'] !== 0) {
+
+        if ($result['code'] !== 0) {
             throw new \Exception("list account failed: " . $result['error']);
         }
-        if (!is_array($aFile)) {
-            if (preg_match("#Error#", $aFile)) {
-                throw new \Exception($aFile);
-            }
-        }
-        if (count($aFile) == 0) {
-            return false;
-        }
-        $aList = array();
-        $aTri = array();
-        $sHead = array_shift($aFile);
-        $aHead = explode(";", $sHead);
-        foreach ($aFile as $i => $ligne) {
-            $aLigne = explode(";", $ligne);
-            $aList[$i] = array();
-            for ($j = 0; $j < count($aHead); $j++) {
-                $aHead[$j] = preg_replace("#[\\r\\n]#", "", $aHead[$j]);
-                $aLigne[$j] = preg_replace("#[\\r\\n]#", "", $aLigne[$j]);
-                $aList[$i][$aHead[$j]] = $aLigne[$j];
-            }
-            $d = explode("@", $aList[$i]['id']);
-            $aList[$i]['backend'] = $d[1];
-            $aList[$i]['compte_id'] = $d[0];
-            if ($sIdBackEnd && $aList[$i]['backend'] == $sIdBackEnd) {
-                $aTri[$aList[$i]['id']] = $aList[$i];
-            } else {
-                $aTri[$i] = $aList[$i];
-            }
-        }
-        return $aTri;
+
+        $csv = $this->parseCSV($this->shell->getOutputFile());
+        return $csv;
+
     }
 
     /**
@@ -253,12 +252,15 @@ class Boobank
      */
     private function exportListeComptes()
     {
-        $command = str_replace("#PATH_CMD#", $this->cmdPathBoobank, self::CMD_EXPORT_LIST_COMPTE);
-
+        $command = preg_replace([
+            "#\#PATH_CMD\##"
+        ],
+            [
+                $this->cmdPathBoobank
+            ], self::CMD_EXPORT_LIST_COMPTE);
 
         return $this->shell->run($command);
     }
-
 
 
     /**
@@ -298,23 +300,8 @@ class Boobank
      */
     public function addConnexion($sIdBackEnd, $sIdBank, $sLogin, $sPassword)
     {
-        $sIdBackEnd = strtoupper($sIdBackEnd);
-        $sIdBank = strtolower($sIdBank);
-        $aBackEnds = $this->getBackEnds();
-        if (!is_array($aBackEnds)) {
-            $aBackEnds = array();
-        }
-        if (!array_key_exists($sIdBackEnd, $aBackEnds)) {
-            $aBackend = $this->aBackEndModel;
-            $aBackend['_module'] = $sIdBank;
-            $aBackend['login'] = $sLogin;
-            $aBackend['password'] = $sPassword;
-            $aBackEnds[$sIdBackEnd] = $aBackend;
-            $this->setBackEnds($aBackEnds);
-            return true;
-        } else {
-            return $sIdBackEnd . " already exist as connexion";
-        }
+
+
     }
 
     /**
@@ -469,6 +456,26 @@ class Boobank
             $this->cmdPath
         ), self::CMD_LIST_BACKENDS);
         return $this->cmd($command, true);
+    }
+
+
+    /**
+     * parse csv file to array
+     * @param string $file
+     */
+    public function parseCSV($file)
+    {
+        $resource = (new File($this->shell->getOutputFile()))->openFile();
+        $a = [];
+        $headers = explode(";", $resource->fgetcsv()[0]);
+
+        while ($row = $resource->fgetcsv()) {
+            $r = explode(";", $row[0]);
+            if ($r[0] != "") {
+                $a[] = array_combine($headers, $r);
+            }
+        }
+        return $a;
     }
 }
 

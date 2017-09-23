@@ -30,8 +30,7 @@ class BoobankAccountListCommand extends ContainerAwareCommand
         $this->boobank = $this->getContainer()->get('boobank');
 
         $account = $this->boobank->listComptes($backend);
-dump($account);
-        $output->writeln('Command result.');
+        dump($account);
     }
 
 }

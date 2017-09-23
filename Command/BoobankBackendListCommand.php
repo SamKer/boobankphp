@@ -35,7 +35,6 @@ class BoobankBackendListCommand extends ContainerAwareCommand
             $list = $this->boobank->getConnexion($backend);
         }
         dump($list);
-        $output->writeln('Command result.');
     }
 
 }
