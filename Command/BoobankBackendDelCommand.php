@@ -11,7 +11,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ChoiceQuestion;
 use Symfony\Component\Console\Question\Question;
 
-class BoobankBackendAddCommand extends ContainerAwareCommand
+class BoobankBackendDelCommand extends ContainerAwareCommand
 {
     /**
      * @var BooBank
@@ -21,8 +21,8 @@ class BoobankBackendAddCommand extends ContainerAwareCommand
     protected function configure()
     {
         $this
-            ->setName('boobank:backend:add')
-            ->setDescription('add backend')
+            ->setName('boobank:backend:remove')
+            ->setDescription('remove backend')
             ->addOption('name', null, InputArgument::OPTIONAL, 'backend name');
 
     }
@@ -34,27 +34,13 @@ class BoobankBackendAddCommand extends ContainerAwareCommand
         $helper = $this->getHelper('question');
         $backend = $input->getOption('name');
         if (!$backend) {
-            $question = new Question('Please enter the name of the backend: ');
+            $question = new Question('Please enter the backend to remove: ');
             $backend = $helper->ask($input, $output, $question);
         }
 
-        //list modules
-        $availableModules = $boobank->getAvailableModules();
-        $question = new ChoiceQuestion("select module: ", $availableModules, 0);
-        $module = $helper->ask($input, $output, $question);
+        $boobank->removeBackend($backend);
 
-        //login
-        $question = new Question('Please enter the login for connection to ' . $backend . ': ');
-        $login = $helper->ask($input, $output, $question);
-
-        $question = new Question('What is the password for connection to ' . $backend . '?: ');
-        $question->setHidden(true);
-        $question->setHiddenFallback(false);
-        $password = $helper->ask($input, $output, $question);
-
-        $boobank->addBackend($backend, $module, $login, $password);
-
-        $output->writeln("backend created");
+        $output->writeln("backend removed");
     }
 
 }

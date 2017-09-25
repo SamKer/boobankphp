@@ -65,6 +65,14 @@ class Boobank
      */
     const CMD_EXPORT_LIST_COMPTE = "#PATH_CMD# list -f csv --select label,iban,balance";
 
+
+    private $availableModules = [
+        self::BANK_BP,
+        self::BANK_CIC
+    ];
+
+
+
     /**
      * Chemin du fichier backends servant de connexion à boobank dans repertoire
      * home du www-data
@@ -91,25 +99,23 @@ class Boobank
      *
      * @var array
      */
-    private $aBackEndModel = array(
-        "backendID" => array(
-            "_backend" => "bankID",
-            "website" => "par",
-            "login" => "log",
-            "password" => "pass"
-        )
-    );
+    private $aBackEndModel = [
+        "_backend" => "bankID",
+        "website" => "par",
+        "login" => "log",
+        "password" => "pass"
+    ];
 
     /**
      * Liste de clé pour les exports de données
      *
      * @var array
      */
-    private $aSerial = array(
+    private $aSerial = [
         'date',
         'raw',
         'amount'
-    );
+    ];
 
     /**
      * Instance of Shell
@@ -193,6 +199,8 @@ class Boobank
         if (!$this->fs->exists($this->sBackendsPath)) {
             $this->fs->touch($this->sBackendsPath);
         }
+
+        $this->getBackEnds();
         /*
                 //export file
                 $this->exportPath = $this->shell->home() . "/.config/weboob/export.csv";
@@ -264,7 +272,8 @@ class Boobank
 
 
     /**
-     * Donne les backends déjà défini
+     * public alias for private getBackends
+     * @deprecated
      *
      * @return array
      */
@@ -297,23 +306,57 @@ class Boobank
      *            login
      * @param string|integer $sPassword
      *            password
+     * @return void
      */
-    public function addConnexion($sIdBackEnd, $sIdBank, $sLogin, $sPassword)
+    public function addBackend($sIdBackEnd, $sIdBank, $sLogin, $sPassword)
     {
 
+        //test if backend already exist
+        if (isset($this->aBackEnds[$sIdBackEnd])) {
+            throw new \Exception("backend " . $sIdBackEnd . " already exist");
+        }
+        //test if module exist
+        if (!in_array($sIdBank, $this->availableModules)) {
+            throw new \Exception("module " . $sIdBank . " doesn't exist");
+        }
 
+        //test login
+        if (!$sLogin) {
+            throw new \Exception("a login is expected, false given");
+        }
+        //test password
+        if (!$sPassword) {
+            throw new \Exception("password expeced, false given");
+        }
+
+        $this->aBackEnds[$sIdBackEnd] = $this->aBackEndModel;
+        $this->aBackEnds[$sIdBackEnd]['_backend'] = $sIdBank;
+        $this->aBackEnds[$sIdBackEnd]['login'] = $sLogin;
+        $this->aBackEnds[$sIdBackEnd]['password'] = $sPassword;
+        $this->saveBackends();
     }
 
     /**
-     * Enregistre le backend dans on état actuel
-     *
-     * @param array $aBackEnds
-     * @return void
+     * remove backend
+     * @param string $backend
+     * @throws \Exception
      */
-    private function setBackEnds($aBackEnds)
-    {
+    public function removeBackend($backend) {
+         //test if backend already exist
+        if (!isset($this->aBackEnds[$backend])) {
+            throw new \Exception("backend " . $backend . " doesn't exist or already removed");
+        }
+        unset($this->aBackEnds[$backend]);
+        $this->saveBackends();
+    }
+
+    /**
+     * rewrite backend file config with current values
+     * return void
+     */
+    private function saveBackends() {
         $sBackEnds = "";
-        foreach ($aBackEnds as $key => $aBackEnd) {
+        foreach ($this->getBackEnds() as $key => $aBackEnd) {
             $sBackEnds .= "[" . $key . "]\n";
             foreach ($aBackEnd as $key2 => $value) {
                 $sBackEnds .= $key2 . "=" . $value . "\n";
@@ -324,22 +367,14 @@ class Boobank
     }
 
     /**
-     * Enlève une connexion
-     *
-     * @param string $sIDBackEnd
+     * Get available module ( bank list module boobank)
+     * @return array
      */
-    public function removeConnexion($sIdBackEnd)
+    public function getAvailableModules()
     {
-        $sIdBackEnd = strtoupper($sIdBackEnd);
-        $aBackEnds = $this->getBackEnds();
-        if (in_array($sIdBackEnd, $aBackEnds)) {
-            unset($aBackEnds[$sIdBackEnd]);
-            $this->setBackEnds($aBackEnds);
-            return true;
-        } else {
-            return $sIdBackEnd . " n'existe pas comme backends";
-        }
+        return $this->availableModules;
     }
+
 
     /**
      * Donne l'historique d'un compte en particulier
