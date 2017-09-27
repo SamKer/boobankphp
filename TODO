@@ -1,3 +1,6 @@
 TODO LIST
 
-- test if update
+- history
+- filters params
+- save last history
+- limit history in params

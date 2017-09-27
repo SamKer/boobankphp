@@ -12,8 +12,12 @@ default boobank command at /usr/bin
         bin_path:"/usr/bin"
         
 ## registered commands
-- boobank:backend:add
-- boobank:backend:list
-- boobank:backend:remove
+- boobank:backend:add --name=[backend]
+- boobank:backend:list --name=[backend]
+- boobank:backend:remove --name=[backend]
+
+- boobank:account:list [backend]
+
+
 
 

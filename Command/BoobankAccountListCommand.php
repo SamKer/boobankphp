@@ -20,16 +20,16 @@ class BoobankAccountListCommand extends ContainerAwareCommand
         $this
             ->setName('boobank:account:list')
             ->setDescription('List account')
-            ->addOption('name', null, InputOption::VALUE_REQUIRED, 'backend name')
+            ->addArgument('name', InputArgument::REQUIRED, 'backend name')
         ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $backend = $input->getOption('name');
+        $backend = $input->getArgument('name');
         $this->boobank = $this->getContainer()->get('boobank');
 
-        $account = $this->boobank->listComptes($backend);
+        $account = $this->boobank->listAccount($backend);
         dump($account);
     }
 

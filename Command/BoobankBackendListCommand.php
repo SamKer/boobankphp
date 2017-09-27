@@ -30,9 +30,9 @@ class BoobankBackendListCommand extends ContainerAwareCommand
         $backend = $input->getOption('name');
         $this->boobank = $this->getContainer()->get('boobank');
 
-        $list = $this->boobank->getConnexions();
+        $list = $this->boobank->getBackEnds();
         if($backend !== null){
-            $list = $this->boobank->getConnexion($backend);
+            $list = $this->boobank->getBackend($backend);
         }
         dump($list);
     }

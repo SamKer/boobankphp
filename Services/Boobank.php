@@ -10,8 +10,6 @@ use Symfony\Component\HttpFoundation\File\File;
  *
  * @author Samir Keriou
  * @since 01/02/2014
- * @version 1
- *
  *
  */
 class Boobank
@@ -63,14 +61,13 @@ class Boobank
      *
      * @var cmd
      */
-    const CMD_EXPORT_LIST_COMPTE = "#PATH_CMD# list -f csv --select label,iban,balance";
+    const CMD_EXPORT_LIST_COMPTE = "#PATH_CMD# list -f csv --select id,label,iban,balance";
 
 
     private $availableModules = [
         self::BANK_BP,
         self::BANK_CIC
     ];
-
 
 
     /**
@@ -238,18 +235,34 @@ class Boobank
     }
 
     /**
-     * Liste les comptes
+     * List account for specific backend
+     * @param string $backend
+     * @return array
      */
-    public function listComptes($sIdBackEnd = false)
+    public function listAccount($backend)
     {
+        if (!isset($this->aBackEnds[$backend])) {
+            throw new \Exception("backend " . $backend . " not exist");
+        }
         $result = $this->exportListeComptes();
 
         if ($result['code'] !== 0) {
             throw new \Exception("list account failed: " . $result['error']);
         }
 
+        //filter for backend
         $csv = $this->parseCSV($this->shell->getOutputFile());
-        return $csv;
+        $list = array_filter($csv, function ($r) use($backend) {
+            return (substr($r["id"], -strlen($backend)) === $backend);
+        });
+        //replace id
+        $list = array_map(function($r) use($backend) {
+            $r['id'] = substr($r['id'], 0, -(strlen($backend)+1));
+            return $r;
+        }, $list);
+
+
+        return $list;
 
     }
 
@@ -260,34 +273,25 @@ class Boobank
      */
     private function exportListeComptes()
     {
-        $command = preg_replace([
-            "#\#PATH_CMD\##"
-        ],
+        $command = preg_replace(
+            [
+                "#\#PATH_CMD\##"
+            ],
             [
                 $this->cmdPathBoobank
-            ], self::CMD_EXPORT_LIST_COMPTE);
+            ],
+            self::CMD_EXPORT_LIST_COMPTE);
 
         return $this->shell->run($command);
     }
 
 
     /**
-     * public alias for private getBackends
-     * @deprecated
-     *
-     * @return array
-     */
-    public function getConnexions()
-    {
-        return $this->getBackEnds();
-    }
-
-    /**
      * Renvoi les backends disponibles
      *
      * @return array
      */
-    private function getBackEnds()
+    public function getBackEnds()
     {
         if ($this->aBackEnds == false) {
             $this->aBackEnds = parse_ini_file($this->sBackendsPath, true);
@@ -341,8 +345,9 @@ class Boobank
      * @param string $backend
      * @throws \Exception
      */
-    public function removeBackend($backend) {
-         //test if backend already exist
+    public function removeBackend($backend)
+    {
+        //test if backend already exist
         if (!isset($this->aBackEnds[$backend])) {
             throw new \Exception("backend " . $backend . " doesn't exist or already removed");
         }
@@ -354,7 +359,8 @@ class Boobank
      * rewrite backend file config with current values
      * return void
      */
-    private function saveBackends() {
+    private function saveBackends()
+    {
         $sBackEnds = "";
         foreach ($this->getBackEnds() as $key => $aBackEnd) {
             $sBackEnds .= "[" . $key . "]\n";
@@ -438,7 +444,7 @@ class Boobank
      * @return array|false
      * @throws \Exception
      */
-    public function getConnexion($backend)
+    public function getBackend($backend)
     {
         $this->getBackEnds();
         if (!isset($this->aBackEnds[$backend])) {
