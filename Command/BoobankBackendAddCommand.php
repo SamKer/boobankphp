@@ -4,7 +4,6 @@ namespace Sam\BoobankBundle\Command;
 
 use Sam\BoobankBundle\Services\BooBank;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -23,7 +22,7 @@ class BoobankBackendAddCommand extends ContainerAwareCommand
         $this
             ->setName('boobank:backend:add')
             ->setDescription('add backend')
-            ->addOption('name', null, InputArgument::OPTIONAL, 'backend name');
+            ->addOption('name', null, InputOption::VALUE_OPTIONAL, 'backend name');
 
     }
 

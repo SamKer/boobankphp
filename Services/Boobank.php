@@ -391,6 +391,7 @@ class Boobank
      */
     public function getHistory($sIdCompte, $sIdBackEnd, $fromDate = false)
     {
+        die('todo hist');
         $sIdBackEnd = strtoupper($sIdBackEnd);
         $aFile = $this->exportCompte($sIdCompte, $sIdBackEnd, $fromDate);
         $aHistory = array();
