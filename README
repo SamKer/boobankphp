@@ -59,11 +59,14 @@ but you can define another bin path in parameters.yml
 ```
         
 ## registered commands
+```bash
 - boobank:backend:add --name=[backend]
 - boobank:backend:list --name=[backend]
 - boobank:backend:remove --name=[backend]
 
 - boobank:account:list [backend]
+- boobank:account:history -b [backend] -a [account]
+```
 
 
 

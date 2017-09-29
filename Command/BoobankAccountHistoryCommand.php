@@ -20,8 +20,8 @@ class BoobankAccountHistoryCommand extends ContainerAwareCommand
         $this
             ->setName('boobank:account:history')
             ->setDescription('get history account')
-            ->addOption('backend', null, InputOption::VALUE_REQUIRED, 'backend name')
-            ->addOption('account', null, InputOption::VALUE_REQUIRED, "account id")
+            ->addOption('backend', "b", InputOption::VALUE_REQUIRED, 'backend name')
+            ->addOption('account', "a", InputOption::VALUE_REQUIRED, "account id")
         ;
     }
 
@@ -34,6 +34,7 @@ class BoobankAccountHistoryCommand extends ContainerAwareCommand
 
         $account = $this->boobank->getHistory($account, $backend);
         dump($account);
+        $output->writeln("<---history");
     }
 
 }

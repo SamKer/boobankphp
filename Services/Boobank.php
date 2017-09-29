@@ -41,19 +41,19 @@ class Boobank
      *
      * @var string
      */
-    const CMD_LIST_BACKENDS = "#PATH_CMD#/weboob-config list";
+    # const CMD_LIST_BACKENDS = "#PATH_CMD# list";
     /**
      * commande pour obtenir l'historique d'un compte particulier
      *
      * @var string
      */
-    const CMD_LIST_COMPTE = "#PATH_CMD#/boobank history #IDCOMPTE#@#IDBACKEND#";
+    #const CMD_LIST_COMPTE = "#PATH_CMD# -b #IDBACKEND# history #IDCOMPTE#@#IDBACKEND#";
     /**
      * commande pour exporter l'historique d'un compte en particulier
      *
      * @var cmd
      */
-    const CMD_EXPORT_HISTORY_COMPTE = "#PATH_CMD#/boobank history #IDCOMPTE#@#IDBACKEND# -f csv";
+    const CMD_HISTORY = "#PATH_CMD# -b #IDBACKEND# history #IDCOMPTE#@#IDBACKEND# -f csv #FILTERS#";
 
     /**
      * commande pour lister les comptes avec leur montant courant
@@ -61,7 +61,7 @@ class Boobank
      *
      * @var cmd
      */
-    const CMD_EXPORT_LIST_COMPTE = "#PATH_CMD# list -f csv --select id,label,iban,balance";
+    const CMD_LIST = "#PATH_CMD# -b #IDBACKEND# list -f csv  #FILTERS#";
 
 
     private $availableModules = [
@@ -144,35 +144,56 @@ class Boobank
     private $fs;
 
     /**
+     * optionnal params
+     * @var array
+     */
+    private $params = [
+        "bin_path" => "/usr/bin",
+        "filters" => [
+            "list" => ["id"],
+            "history" => ["id"]
+
+        ]
+    ];
+
+    /**
      * crée le dossier local boobank pour d'éventuels exports
      *
      * @param Shell $shell
      * @param array $params
      */
-    public function __construct(Shell $shell, $params = ["bin_path" => "/usr/bin"])
+    public function __construct(Shell $shell, $params = [])
     {
         // dependances
         $this->shell = $shell;
         $this->fs = new Filesystem();
 
+        //params
+        $this->params = array_merge_recursive($this->params, $params);
+
+        if(is_array($this->params['bin_path'])) {
+            $this->params['bin_path'] = array_pop($this->params['bin_path']);
+        }
+
+
         //define pathcommands-----------
         $this->cmdPathWeboob = $this->shell->getPathCommand("weboob");
         if (!$this->cmdPathWeboob) {
-            $this->cmdPathWeboob = $params["bin_path"] . "/weboob";
+            $this->cmdPathWeboob = $this->params["bin_path"] . "/weboob";
             if (!$this->fs->exists($this->cmdPathWeboob)) {
                 throw new \Exception("class php Boobank needs weboob command");
             }
         }
         $this->cmdPathWeboobConfig = $this->shell->getPathCommand("weboob-config");
         if (!$this->cmdPathWeboobConfig) {
-            $this->cmdPathWeboobConfig = $params["bin_path"] . "/weboob-config";
+            $this->cmdPathWeboobConfig = $this->params["bin_path"] . "/weboob-config";
             if (!$this->fs->exists($this->cmdPathWeboobConfig)) {
                 throw new \Exception("class php Boobank needs weboob-config command");
             }
         }
         $this->cmdPathBoobank = $this->shell->getPathCommand("boobank");
         if (!$this->cmdPathBoobank) {
-            $this->cmdPathBoobank = $params["bin_path"] . "/boobank";
+            $this->cmdPathBoobank = $this->params["bin_path"] . "/boobank";
             if (!$this->fs->exists($this->cmdPathBoobank)) {
                 throw new \Exception("class php Boobank needs boobank command");
             }
@@ -198,13 +219,6 @@ class Boobank
         }
 
         $this->getBackEnds();
-        /*
-                //export file
-                $this->exportPath = $this->shell->home() . "/.config/weboob/export.csv";
-                if (!$this->fs->exists($this->exportPath)) {
-                    $this->fs->touch($this->exportPath);
-                }
-        */
     }
 
 
@@ -214,7 +228,7 @@ class Boobank
      * @param string $p1
      * @param string $p2
      * @param string $p3
-     */
+     *//*
     public function setSerialKeys($p1, $p2, $p3)
     {
         $this->aSerial = array(
@@ -222,17 +236,17 @@ class Boobank
             $p2,
             $p3
         );
-    }
+    }*/
 
     /**
      * Ajoute une clé pour le serial
      *
      * @param string $p
-     */
+     *//*
     public function addToSerialKey($p)
     {
         $this->aSerial[] = $p;
-    }
+    }*/
 
     /**
      * List account for specific backend
@@ -244,7 +258,7 @@ class Boobank
         if (!isset($this->aBackEnds[$backend])) {
             throw new \Exception("backend " . $backend . " not exist");
         }
-        $result = $this->exportListeComptes();
+        $result = $this->runList($backend);
 
         if ($result['code'] !== 0) {
             throw new \Exception("list account failed: " . $result['error']);
@@ -252,14 +266,7 @@ class Boobank
 
         //filter for backend
         $csv = $this->parseCSV($this->shell->getOutputFile());
-        $list = array_filter($csv, function ($r) use($backend) {
-            return (substr($r["id"], -strlen($backend)) === $backend);
-        });
-        //replace id
-        $list = array_map(function($r) use($backend) {
-            $r['id'] = substr($r['id'], 0, -(strlen($backend)+1));
-            return $r;
-        }, $list);
+        $list = $this->filter($csv, $backend);
 
 
         return $list;
@@ -267,20 +274,25 @@ class Boobank
     }
 
     /**
-     * Export dans un fichier csv la liste des comptes d'un backend
+     * list account in csv
      *
-     * @param string $sIdBackEnd
+     * @param string $backend
+     * @return array
      */
-    private function exportListeComptes()
+    private function runList($backend)
     {
         $command = preg_replace(
             [
-                "#\#PATH_CMD\##"
+                "#\#PATH_CMD\##",
+                "#\#IDBACKEND\##",
+                "#\#FILTERS\##"
             ],
             [
-                $this->cmdPathBoobank
+                $this->cmdPathBoobank,
+                $backend,
+                $this->getFilters("list")
             ],
-            self::CMD_EXPORT_LIST_COMPTE);
+            self::CMD_LIST);
 
         return $this->shell->run($command);
     }
@@ -385,58 +397,46 @@ class Boobank
     /**
      * Donne l'historique d'un compte en particulier
      *
-     * @param string $sIdCompte
-     * @param string $sIdBackEnd
+     * @param string $account
+     * @param string $backend
      * @return array
      */
-    public function getHistory($sIdCompte, $sIdBackEnd, $fromDate = false)
+    public function getHistory($account, $backend, $fromDate = false)
     {
-        die('todo hist');
-        $sIdBackEnd = strtoupper($sIdBackEnd);
-        $aFile = $this->exportCompte($sIdCompte, $sIdBackEnd, $fromDate);
-        $aHistory = array();
-        $sHead = array_shift($aFile);
-        $aHead = explode(";", $sHead);
-        foreach ($aFile as $i => $ligne) {
-            $aLigne = explode(";", $ligne);
-            $aHistory[$i] = array();
-            for ($j = 0; $j < count($aHead); $j++) {
-                $aHead[$j] = preg_replace("#[\\r\\n]#", "", $aHead[$j]);
-                $aLigne[$j] = preg_replace("#[\\r\\n]#", "", $aLigne[$j]);
-                $aHistory[$i][$aHead[$j]] = $aLigne[$j];
-            }
-            // serial key for this raw
-            $serial = "#";
-            foreach ($this->aSerial as $k) {
-                $serial .= $aHistory[$i][$k] . "#";
-            }
-            $aHistory[$i]['serial'] = $serial;
+        $result = $this->runHistory($account, $backend, $fromDate);
+        if ($result['code'] !== 0) {
+            throw new \Exception("history failed");
         }
-        return $aHistory;
+        $csv = $this->parseCSV($this->shell->getOutputFile());
+        $list = $this->filter($csv, $backend);
+
+        return $list;
     }
 
     /**
      * Export dans un fichier csv l'historique d'un compte
      *
-     * @param string $sIdCompte
-     * @param string $sIdBackEnd
+     * @param string $account
+     * @param string $backend
+     * @return csv
      */
-    private function exportCompte($sIdCompte, $sIdBackEnd, $fromDate = false)
+    private function runHistory($account, $backend, $fromDate = false)
     {
-        $sIdBackEnd = strtoupper($sIdBackEnd);
         $command = preg_replace(array(
             "#\\#IDCOMPTE\\##",
             "#\\#IDBACKEND\\##",
-            "#\\#PATH_CMD\\##"
+            "#\\#PATH_CMD\\##",
+            "#\\#FILTERS\\##"
         ), array(
-            $sIdCompte,
-            $sIdBackEnd,
-            $this->cmdPath
-        ), self::CMD_EXPORT_HISTORY_COMPTE);
+            $account,
+            $backend,
+            $this->cmdPathBoobank,
+            $this->getFilters("history")
+        ), self::CMD_HISTORY);
         if ($fromDate) {
             $command .= " " . $fromDate;
         }
-        return $this->cmd($command, true);
+        return $this->shell->run($command);
     }
 
     /**
@@ -519,15 +519,41 @@ class Boobank
         }
         return $a;
     }
+
+    /**
+     * filter csv
+     * @param $csv
+     * @param $backend
+     * @return array
+     */
+    public function filter($csv, $backend)
+    {
+        $list = array_filter($csv, function ($r) use ($backend) {
+            return (substr($r["id"], -strlen($backend)) === $backend);
+        });
+        //replace id
+        $list = array_map(function ($r) use ($backend) {
+            $r['id'] = substr($r['id'], 0, -(strlen($backend) + 1));
+            return $r;
+        }, $list);
+        return $list;
+    }
+
+    /**
+     * get filter select
+     * @param $filter
+     * @return string $filter command option
+     */
+    private function getFilters($cmd)
+    {
+        $filters = "";
+        if (count($this->params["filters"][$cmd]) === 1) {
+            $filters = "";
+        } else {
+            $filters = implode(",", $this->params["filters"][$cmd]);
+            $filters = "--select " . $filters;
+        }
+        return $filters;
+    }
+
 }
-
-//-------------------TESTS-------------------------//
-// $bb = new BooBank();
-// $a = $bb->listConnexions();
-// print_r($a);
-// $bb->addConnexion("test", BooBank::BANK_BP, "1530988630", "729729");
-// $a = $bb->getHistory("5452663N020", "test");
-// print_r($a);
-
-
-

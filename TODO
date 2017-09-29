@@ -1,8 +1,9 @@
 TODO LIST
 
 - account list if backend false too long request waiting
-- account mise en cache
+- account mise en cache?
 - history
-- filters params
+- filters params in request
+- filters by date
 - save last history
 - limit history in params
