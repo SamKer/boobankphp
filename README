@@ -49,8 +49,8 @@ class AppKernel extends Kernel
     // ...
 }
 ````
-
-## configuration
+Step 3: Edit Parameters
+-------------------------
 default boobank command at /usr/bin
 but you can define another bin path in parameters.yml
 ```yml
@@ -58,16 +58,24 @@ but you can define another bin path in parameters.yml
         bin_path:"/usr/bin"
 ```
         
-## registered commands
+Step 4: Registered commands
+--------------------------
+you can use command line as follow
 ```bash
 - boobank:backend:add --name=[backend]
 - boobank:backend:list --name=[backend]
 - boobank:backend:remove --name=[backend]
 
 - boobank:account:list [backend]
-- boobank:account:history -b [backend] -a [account]
+- boobank:account:history -b [backend] -a [account] -d [date] -f [filters,..]
 ```
 
-
-
+or use service
+```php
+$boobank = $container->get('boobank');
+//list backend
+$list = $boobank->listAccount($backend);
+//history
+$history = $boobank->getHistory($account, $backend, $date, $filters);
+```
 

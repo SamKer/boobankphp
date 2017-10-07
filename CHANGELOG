@@ -1,3 +1,6 @@
+-- v-1.0.0
+* list & history command
+* filters parameters
 -- v-0.0.1
 * backend list, add, remove
 * account list

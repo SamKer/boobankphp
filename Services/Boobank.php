@@ -53,7 +53,7 @@ class Boobank
      *
      * @var cmd
      */
-    const CMD_HISTORY = "#PATH_CMD# -b #IDBACKEND# history #IDCOMPTE#@#IDBACKEND# -f csv #FILTERS#";
+    const CMD_HISTORY = "#PATH_CMD# -b #IDBACKEND# history #IDCOMPTE#@#IDBACKEND# -f csv #FILTERS# #DATE#";
 
     /**
      * commande pour lister les comptes avec leur montant courant
@@ -171,7 +171,7 @@ class Boobank
         //params
         $this->params = array_merge_recursive($this->params, $params);
 
-        if(is_array($this->params['bin_path'])) {
+        if (is_array($this->params['bin_path'])) {
             $this->params['bin_path'] = array_pop($this->params['bin_path']);
         }
 
@@ -401,14 +401,14 @@ class Boobank
      * @param string $backend
      * @return array
      */
-    public function getHistory($account, $backend, $fromDate = false)
+    public function getHistory($account, $backend, $date = false, $filters = false)
     {
-        $result = $this->runHistory($account, $backend, $fromDate);
+        $result = $this->runHistory($account, $backend, $date, $filters);
         if ($result['code'] !== 0) {
             throw new \Exception("history failed");
         }
         $csv = $this->parseCSV($this->shell->getOutputFile());
-        $list = $this->filter($csv, $backend);
+        $list = $this->filter($csv, $backend, $account);
 
         return $list;
     }
@@ -420,22 +420,22 @@ class Boobank
      * @param string $backend
      * @return csv
      */
-    private function runHistory($account, $backend, $fromDate = false)
+    private function runHistory($account, $backend, $date = false, $select = false)
     {
         $command = preg_replace(array(
             "#\\#IDCOMPTE\\##",
             "#\\#IDBACKEND\\##",
             "#\\#PATH_CMD\\##",
-            "#\\#FILTERS\\##"
+            "#\\#FILTERS\\##",
+            "#\\#DATE\\##"
         ), array(
             $account,
             $backend,
             $this->cmdPathBoobank,
-            $this->getFilters("history")
+            $this->getFilters("history", $select),
+            $this->getDate($date)
         ), self::CMD_HISTORY);
-        if ($fromDate) {
-            $command .= " " . $fromDate;
-        }
+//die($command);
         return $this->shell->run($command);
     }
 
@@ -524,16 +524,22 @@ class Boobank
      * filter csv
      * @param $csv
      * @param $backend
+     * @param string $account account id , default to false
      * @return array
      */
-    public function filter($csv, $backend)
+    public function filter($csv, $backend, $account = false)
     {
+
         $list = array_filter($csv, function ($r) use ($backend) {
             return (substr($r["id"], -strlen($backend)) === $backend);
         });
         //replace id
-        $list = array_map(function ($r) use ($backend) {
+        $list = array_map(function ($r) use ($backend, $account) {
             $r['id'] = substr($r['id'], 0, -(strlen($backend) + 1));
+            if ($account && $r['id'] == "") {
+                $r['id'] = $account;
+            }
+            $r['hash'] = hash("sha256", implode(";", $r));
             return $r;
         }, $list);
         return $list;
@@ -541,12 +547,18 @@ class Boobank
 
     /**
      * get filter select
-     * @param $filter
+     * @param string $cmd
+     * @param string $filter filter
+     *
      * @return string $filter command option
      */
-    private function getFilters($cmd)
+    private function getFilters($cmd, $filters = false)
     {
-        $filters = "";
+        if($filters) {
+
+            return $filters = "--select id," . $filters;
+        }
+
         if (count($this->params["filters"][$cmd]) === 1) {
             $filters = "";
         } else {
@@ -554,6 +566,19 @@ class Boobank
             $filters = "--select " . $filters;
         }
         return $filters;
+    }
+
+
+    /**
+     * Get filter by date
+     * @return date $date defined by param dateinterval
+     */
+    private function getDate($date = false)
+    {
+        if($date) {
+            return $date;
+        }
+        return (new \DateTime())->sub(new \DateInterval($this->params['dateInterval']))->format("Y-m-d");
     }
 
 }

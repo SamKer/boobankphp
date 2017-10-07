@@ -1,9 +1,4 @@
 TODO LIST
 
-- account list if backend false too long request waiting
-- account mise en cache?
-- history
-- filters params in request
-- filters by date
+- list modules?!!
 - save last history
-- limit history in params
