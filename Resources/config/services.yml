@@ -1,0 +1,7 @@
+services:
+    boobank.shell:
+        class: Sam\BoobankBundle\Services\Shell
+        arguments: []
+    boobank:
+        class: Sam\BoobankBundle\Services\Boobank
+        arguments: [ "@boobank.shell", "%boobank%" ]
