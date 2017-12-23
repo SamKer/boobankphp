@@ -1,0 +1,11 @@
+imports:
+    - { resource: services.yml }
+
+#doctrine:
+#    orm:
+#        entity_managers:
+#            default:
+#                mappings:
+#                    SamKerBoobankBundle:
+#                        type: annotation
+#                        mapping: true

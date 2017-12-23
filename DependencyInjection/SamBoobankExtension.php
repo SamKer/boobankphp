@@ -1,6 +1,6 @@
 <?php
 
-namespace Sam\BoobankBundle\DependencyInjection;
+namespace SamKer\BoobankBundle\DependencyInjection;
 
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Config\FileLocator;

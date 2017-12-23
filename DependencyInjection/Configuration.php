@@ -1,6 +1,6 @@
 <?php
 
-namespace Sam\BoobankBundle\DependencyInjection;
+namespace SamKer\BoobankBundle\DependencyInjection;
 
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;

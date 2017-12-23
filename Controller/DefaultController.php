@@ -1,6 +1,6 @@
 <?php
 
-namespace Sam\BoobankBundle\Controller;
+namespace SamKer\BoobankBundle\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 

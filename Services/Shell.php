@@ -1,5 +1,5 @@
 <?php
-namespace Sam\BoobankBundle\Services;
+namespace SamKer\BoobankBundle\Services;
 
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
@@ -20,6 +20,7 @@ class Shell
 
     private $output = self::LOG_DIR . "/output.log";
     private $error = self::LOG_DIR . "/error.log";
+    private $history = self::LOG_DIR . "/history.log";
 
     /**
      * @var File
@@ -29,6 +30,7 @@ class Shell
      * @var File
      */
     private $fileError;
+    private $fileHistory;
 
     private $opCommand = "";
     private $cmd = "";
@@ -53,12 +55,19 @@ class Shell
         }
         if (!$this->fs->exists($this->output)) {
             $this->fs->touch($this->output);
+            $this->fs->chmod($this->output, 0777);
         }
         if (!$this->fs->exists($this->error)) {
             $this->fs->touch($this->error);
+            $this->fs->chmod($this->error, 0777);
+        }
+        if (!$this->fs->exists($this->history)) {
+            $this->fs->touch($this->history);
+            $this->fs->chmod($this->history, 0777);
         }
         $this->fileOutput = new File($this->output);
         $this->fileError = new File($this->error);
+        $this->fileHistory = new File($this->history);
 
 
         $this->opCommand .= " 1> " . $this->output;
@@ -77,6 +86,7 @@ class Shell
 
     /**
      * Run command
+     * use a command with 1> /tmp/boobank/output.log 2> /tmp/boobank/error.log
      *
      * @param string $cmd bash command
      * @return array return, output
@@ -86,7 +96,6 @@ class Shell
         //hiding output with redirect to temp file
         $this->cmd = $cmd;
         $this->addOPCommand();
-
 
         ob_start();
         exec($this->cmd, $output, $returnCode);
@@ -103,7 +112,8 @@ class Shell
             "output" => $output,//trim($this->fileOutput->openFile('r')->fgets()),
             "error" => $error//trim($this->fileError->openFile('r')->fgets()),
         ];
-
+        //history cmd
+        exec("echo '" . $this->cmd . "' >> " . $this->history);
         $this->lastCommand = $this->cmd;
         $this->cmd = "";
 
@@ -134,13 +144,13 @@ class Shell
     /**
      * get path command
      * @param $cmd
-     * @return binpath or false
+     * @return bin path or false
      */
     public function getPathCommand($cmd)
     {
         $cmd = "which $cmd";
         $result = self::run($cmd);
-        if ($result["code"] !== 0) {
+        if ($result["code"] === 0) {
             return $result["output"];
         }
         return false;
@@ -182,9 +192,9 @@ class Shell
     }
 
     /**
-     * @return string path/to/ouput.log
+     * @return string path/to/output.log
      */
     public function getOutputFile() {
-        return $this->output;
+        return $this->fileOutput;
     }
 }

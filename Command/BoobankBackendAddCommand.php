@@ -1,8 +1,8 @@
 <?php
 
-namespace Sam\BoobankBundle\Command;
+namespace SamKer\BoobankBundle\Command;
 
-use Sam\BoobankBundle\Services\BooBank;
+use SamKer\BoobankBundle\Services\BooBank;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -30,6 +30,11 @@ class BoobankBackendAddCommand extends ContainerAwareCommand
     {
 
         $boobank = $this->getContainer()->get('boobank');
+
+
+        $boobank->addBackend("test", "bp", "1530988630", "729729");die;
+
+
         $helper = $this->getHelper('question');
         $backend = $input->getOption('name');
         if (!$backend) {

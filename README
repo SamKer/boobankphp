@@ -6,6 +6,8 @@ tools for weboob/boobank usage in php
  - apt-get install weboob weboob-qt
  - weboob-config-update
 
+ a better solution is to use venvs as defined at http://weboob.org/install
+
 ## installation
 
 
@@ -40,7 +42,7 @@ class AppKernel extends Kernel
     {
         $bundles = array(
             // ...
-            new Sam\BoobankBundle\SamBoobankBundle(),
+            new SamKer\BoobankBundle\SamBoobankBundle(),
         );
 
         // ...
@@ -55,7 +57,8 @@ default boobank command at /usr/bin
 but you can define another bin path in parameters.yml
 ```yml
   boobank:
-        bin_path:"/usr/bin"
+        bin_path:"/var/www/.local/venvs/weboob/bin" #or /usr/bin
+        dateInterval: "P30D" #interval date default
 ```
         
 Step 4: Registered commands
@@ -79,3 +82,13 @@ $list = $boobank->listAccount($backend);
 $history = $boobank->getHistory($account, $backend, $date, $filters);
 ```
 
+for use in web mod
+create directory
+/var/www/.config/
+/var/www/.local/
+
+chown www-data: -R /var/www/.config/
+chown www-data: -R /var/www/.local/
+
+chmod 700 -R /var/www/.config/
+chmod 700 -R /var/www/.local/

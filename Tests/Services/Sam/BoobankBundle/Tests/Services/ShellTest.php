@@ -6,10 +6,10 @@
  * Time: 10:41
  */
 
-namespace Sam\BoobankBundle\Tests\Services;
+namespace SamKer\BoobankBundle\Tests\Services;
 
 
-use Sam\BoobankBundle\Services\Shell;
+use SamKer\BoobankBundle\Services\Shell;
 
 
 class ShellTest extends \PHPUnit_Framework_TestCase

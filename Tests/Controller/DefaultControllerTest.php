@@ -1,6 +1,6 @@
 <?php
 
-namespace Sam\BoobankBundle\Tests\Controller;
+namespace SamKer\BoobankBundle\Tests\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 

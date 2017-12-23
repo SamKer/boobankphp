@@ -1,8 +1,9 @@
 <?php
-namespace Sam\BoobankBundle\Services;
+namespace SamKer\BoobankBundle\Services;
 
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\File\File;
+use Symfony\Component\Validator\Constraints\DateTime;
 
 /**
  * Class d'extraction de données banquaire via l'utilitaire boobank, composant
@@ -119,7 +120,23 @@ class Boobank
      *
      * @var Shell
      */
-    private $shell = false;
+    private $shell;
+
+    /**
+     * Database service boobank
+     * @var Database
+     */
+    private $database;
+
+    /**
+     * @var \Swift_Mailer
+     */
+    private $mailer;
+
+    /**
+     * @var string mail Admin
+     */
+    private $mailAdmin;
 
     /**
      * Chemin du bin user
@@ -149,6 +166,7 @@ class Boobank
      */
     private $params = [
         "bin_path" => "/usr/bin",
+        "dateInterval" => "P30D",
         "filters" => [
             "list" => ["id"],
             "history" => ["id"]
@@ -161,18 +179,27 @@ class Boobank
      *
      * @param Shell $shell
      * @param array $params
+     * @param Database $database
+     * @param \Swift_Mailer $mailer
+     * @params string $mailAdmin
      */
-    public function __construct(Shell $shell, $params = [])
+    public function __construct(Shell $shell, $params = [], Database $database, \Swift_Mailer $mailer, $mailAdmin)
     {
         // dependances
         $this->shell = $shell;
+        $this->database = $database;
+        $this->mailer = $mailer;
+        $this->mailAdmin = $mailAdmin;
         $this->fs = new Filesystem();
 
         //params
         $this->params = array_merge_recursive($this->params, $params);
-
+        //fix to merge simple value
         if (is_array($this->params['bin_path'])) {
             $this->params['bin_path'] = array_pop($this->params['bin_path']);
+        }
+        if (is_array($this->params['dateInterval'])) {
+            $this->params['dateInterval'] = array_pop($this->params['dateInterval']);
         }
 
 
@@ -263,9 +290,12 @@ class Boobank
         if ($result['code'] !== 0) {
             throw new \Exception("list account failed: " . $result['error']);
         }
+        if($result['error'] !== "") {
+            throw new \Exception("list account failed: " . $result['error']);
+        }
 
         //filter for backend
-        $csv = $this->parseCSV($this->shell->getOutputFile());
+        $csv = $this->parseCSV();
         $list = $this->filter($csv, $backend);
 
 
@@ -305,7 +335,7 @@ class Boobank
      */
     public function getBackEnds()
     {
-        if ($this->aBackEnds == false) {
+        if ($this->aBackEnds === false) {
             $this->aBackEnds = parse_ini_file($this->sBackendsPath, true);
         }
         return $this->aBackEnds;
@@ -326,7 +356,6 @@ class Boobank
      */
     public function addBackend($sIdBackEnd, $sIdBank, $sLogin, $sPassword)
     {
-
         //test if backend already exist
         if (isset($this->aBackEnds[$sIdBackEnd])) {
             throw new \Exception("backend " . $sIdBackEnd . " already exist");
@@ -349,7 +378,12 @@ class Boobank
         $this->aBackEnds[$sIdBackEnd]['_backend'] = $sIdBank;
         $this->aBackEnds[$sIdBackEnd]['login'] = $sLogin;
         $this->aBackEnds[$sIdBackEnd]['password'] = $sPassword;
+        //save in file config, used by boobank cmd
         $this->saveBackends();
+        //save in database, do at first a list account for populate database
+        $listAccounts = $this->listAccount($sIdBackEnd);
+        //add backend and accounts linked in database
+        $this->database->addBackend($sIdBackEnd, $sIdBank, $sLogin, $sPassword, $listAccounts);
     }
 
     /**
@@ -363,8 +397,13 @@ class Boobank
         if (!isset($this->aBackEnds[$backend])) {
             throw new \Exception("backend " . $backend . " doesn't exist or already removed");
         }
-        unset($this->aBackEnds[$backend]);
+        $a = $this->aBackEnds;
+        unset($a[$backend]);
+        $this->aBackEnds = $a;
+        //remove in config
         $this->saveBackends();
+        //remove in database
+        $this->database->removeBackend($backend);
     }
 
     /**
@@ -382,6 +421,7 @@ class Boobank
             $sBackEnds .= "\n";
         }
         file_put_contents($this->sBackendsPath, $sBackEnds);
+
     }
 
     /**
@@ -407,7 +447,10 @@ class Boobank
         if ($result['code'] !== 0) {
             throw new \Exception("history failed");
         }
-        $csv = $this->parseCSV($this->shell->getOutputFile());
+        if($result['error'] !== "") {
+            throw new \Exception("history failed: " . $result['error']);
+        }
+        $csv = $this->parseCSV();
         $list = $this->filter($csv, $backend, $account);
 
         return $list;
@@ -503,9 +546,9 @@ class Boobank
 
     /**
      * parse csv file to array
-     * @param string $file
+     *
      */
-    public function parseCSV($file)
+    public function parseCSV()
     {
         $resource = (new File($this->shell->getOutputFile()))->openFile();
         $a = [];
@@ -529,7 +572,6 @@ class Boobank
      */
     public function filter($csv, $backend, $account = false)
     {
-
         $list = array_filter($csv, function ($r) use ($backend) {
             return (substr($r["id"], -strlen($backend)) === $backend);
         });
@@ -565,20 +607,138 @@ class Boobank
             $filters = implode(",", $this->params["filters"][$cmd]);
             $filters = "--select " . $filters;
         }
+
         return $filters;
     }
 
 
     /**
      * Get filter by date
+     * @param false|string|\DateTime
      * @return date $date defined by param dateinterval
      */
     private function getDate($date = false)
     {
         if($date) {
-            return $date;
+            if(is_string($date)) {
+                return $date;
+            }
+            if($date instanceof \DateTime) {
+                return $date->format("Y-m-d");
+            }
         }
         return (new \DateTime())->sub(new \DateInterval($this->params['dateInterval']))->format("Y-m-d");
+    }
+
+
+    /**
+     * Survey account
+     *
+     */
+    public function watch() {
+        $rules = $this->params['watch'];
+        foreach ($rules as $backend => $accounts) {
+            if(!$this->getBackend($backend)) {
+                throw new \Exception("backend $backend doesn't exist");
+            }
+            foreach ($accounts as $account => $rule) {
+                $survey = $this->survey($backend, $account, $rule['survey']);
+                $this->action($backend, $account, $rule['action'], $survey);
+            }
+        }
+    }
+
+    /**
+     * Run command specified in parameters for watch
+     * @param string $backend
+     * @param string $account
+     * @param array $rule
+     * @return array $listResult (history or account info)
+     * @throws \Exception
+     */
+    private function survey($backend, $account, $rule) {
+//        dump($backend);dump($account);dump($rule);die;
+        switch ($rule) {
+            case 'amount':
+                    //todo
+                break;
+            case 'history':
+                    $list = $this->getHistory($account, $backend);
+                    return $list;
+                break;
+            default:
+                throw new \Exception("rule $rule not expected here");
+                break;
+        }
+    }
+
+    /**
+     * do action specified in parmaeters
+     * @param string $backend
+     * @param string $account
+     * @param array $rule
+     * @param array $survey
+     * @return array [database => nb inserted, mail => nb mail send]
+     * @throws \Exception
+     */
+    private function action($backend, $account, $rule, $survey) {
+//        dump($backend);dump($account);dump($rule);die;
+        $inserts = 0;
+        $mails = 0;
+        foreach ($rule as $action) {
+            switch ($action) {
+                case 'mail':
+                    foreach ($survey as $row) {
+                        $i = $this->sendMail($backend, $account, $row);
+                        if ($i) {
+                            $mails++;
+                        }
+                    }
+                    break;
+                case 'database':
+                    foreach ($survey as $row) {
+//                        dump($row);die;
+                        $i = $this->database->addTransaction($backend, $account, $row);
+                        if($i) {
+                            $inserts++;
+                        }
+                    }
+                    break;
+                default:
+                    throw new \Exception("action $action not expected");
+                    break;
+            }
+        }
+        return [
+            "database" => $inserts,
+            "mail" => $mails
+        ];
+    }
+
+    public function sendMail($backend, $account, $row) {
+        $message = (new \Swift_Message('[RYUKENTEAM WATCH] Survey Bank for you and found new transactions'))
+            ->setFrom($this->mailAdmin)
+            ->setTo('recipient@example.com')
+            ->setBody(
+                $this->renderView(
+                // templates/emails/registration.html.twig
+                    'emails/registration.html.twig',
+                    array('name' => $name)
+                ),
+                'text/html'
+            )
+            /*
+             * If you also want to include a plaintext version of the message
+            ->addPart(
+                $this->renderView(
+                    'emails/registration.txt.twig',
+                    array('name' => $name)
+                ),
+                'text/plain'
+            )
+            */
+        ;
+
     }
 
 }

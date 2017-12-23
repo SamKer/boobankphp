@@ -1,7 +1,10 @@
 services:
+    boobank.database:
+        class: SamKer\BoobankBundle\Services\Database
+        arguments: [ "@service_container" ]
     boobank.shell:
-        class: Sam\BoobankBundle\Services\Shell
+        class: SamKer\BoobankBundle\Services\Shell
         arguments: []
     boobank:
-        class: Sam\BoobankBundle\Services\Boobank
-        arguments: [ "@boobank.shell", "%boobank%" ]
+        class: SamKer\BoobankBundle\Services\Boobank
+        arguments: [ "@boobank.shell", "%boobank%", "@boobank.database" , "@swiftmailer" , "%mailer_user%" ]

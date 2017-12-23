@@ -1,8 +1,8 @@
 <?php
 
-namespace Sam\BoobankBundle\Command;
+namespace SamKer\BoobankBundle\Command;
 
-use Sam\BoobankBundle\Services\BooBank;
+use SamKer\BoobankBundle\Services\BooBank;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
