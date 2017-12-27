@@ -1,0 +1,24 @@
+{
+  "name" : "SamKer/boobankbundle",
+  "description" : "tools for boobank",
+  "type" : "symfony-bundle",
+  "authors" : [{
+    "name" : "samir.keriou",
+    "email" : "samir.keriou@gmail.com"
+  }],
+  "keywords" : [
+    "symfony bundle boobank bank"
+  ],
+  "require" : {
+    "php" : ">=5.5.0",
+    "symfony/framework-bundle" : ">=2.5.6",
+    "twig/twig" : "*",
+    "doctrine/doctrine-bundle" : "*"
+  },
+  "autoload" : {
+    "psr-0" : {
+      "SamKer\\BoobankBundle\\TestBundle" : ""
+    }
+  },
+  "target-dir" : "SamKer/BoobankBundle/TestBundle",
+}
