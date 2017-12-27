@@ -14,31 +14,30 @@ class BoobankWatchCommand extends ContainerAwareCommand
         $this
             ->setName('boobank:watch')
             ->setDescription('survey account')
-//            ->addOption('backend', 'b', InputOption::VALUE_OPTIONAL, 'watch specific backend')
-//            ->addOption('all', null, InputOption::VALUE_OPTIONAL, 'watch all backends')
-//            ->addOption('account', 'a', InputOption::VALUE_OPTIONAL, 'watch specific account for selected backend')
+            ->addOption('backend', 'b', InputOption::VALUE_OPTIONAL, 'watch specific backend', false)
+            ->addOption('account', 'a', InputOption::VALUE_OPTIONAL, 'watch specific account for selected backend', false)
         ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-//        $backend = $input->getOption('backend');
-//        $all = $input->getOption('backend');
-//        $account = $input->getOption('backend');
-//
-//        if($all !== null) {
-//            //all backends
-//        } elseif ($backend === null) {
-//            throw new \Exception("a specific backend have to be define, with --backend option");
-//        }
-//
-//        if($account !== null && $backend === null) {
-//            throw new \Exception("a specific backend have to be define for specific account, with --backend option");
-//        }
+        $backend = $input->getOption('backend');
+        $account = $input->getOption('account');
 
-        $this->getContainer()->get('boobank')->watch();
+        if($backend === null && $account !== null) {
+            throw new \Exception("a specific backend have to be defined, with --backend option");
+        }
+        $boobank = $this->getContainer()->get('boobank');
 
-        $output->writeln('Command result.');
+
+            $result = $boobank->watch($backend, $account);
+            dump($result);
+
+
+
+
+
+        $output->writeln('job done');
     }
 
 }

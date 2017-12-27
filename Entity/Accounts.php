@@ -58,6 +58,20 @@ class Accounts
      */
     private $amount;
 
+    /**
+     * @var array
+     *
+     * @ORM\Column(name="survey", type="string", length=255, nullable=true)
+     */
+    private $survey;
+
+    /**
+     * @var array
+     *
+     * @ORM\Column(name="action", type="string", length=255, nullable=true)
+     */
+    private $action;
+
 
     /**
      * Get id
@@ -179,6 +193,54 @@ class Accounts
     public function getAmount()
     {
         return $this->amount;
+    }
+
+    /**
+     * Set Survey
+     *
+     * @param array $survey
+     *
+     * @return Backends
+     */
+    public function setSurvey($survey)
+    {
+        $this->survey = implode(",",$survey);
+
+        return $this;
+    }
+
+    /**
+     * Get Survey
+     *
+     * @return array
+     */
+    public function getSurvey()
+    {
+        return explode(",", $this->survey);
+    }
+
+    /**
+     * Set Action
+     *
+     * @param array $action
+     *
+     * @return Backends
+     */
+    public function setAction($action)
+    {
+        $this->action = implode(",",$action);
+
+        return $this;
+    }
+
+    /**
+     * Get Actions
+     *
+     * @return array
+     */
+    public function getAction()
+    {
+        return explode(",", $this->action);
     }
 }
 

@@ -32,7 +32,7 @@ class BoobankBackendAddCommand extends ContainerAwareCommand
         $boobank = $this->getContainer()->get('boobank');
 
 
-        $boobank->addBackend("test", "bp", "1530988630", "729729");die;
+//        $boobank->addBackend("test", "bp", "1530988630", "729729");die;
 
 
         $helper = $this->getHelper('question');

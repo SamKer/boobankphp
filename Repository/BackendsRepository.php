@@ -63,4 +63,31 @@ class BackendsRepository extends \Doctrine\ORM\EntityRepository
         }
         return false;
     }
+
+    /**
+     * @param $backend
+     * @param $module
+     * @param $login
+     * @param $password
+     * @param $mail
+     * @return bool|false|Backends
+     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \Exception
+     */
+    public function updateBackend($backend, $module, $login, $password, $mail) {
+        $em = $this->getEntityManager();
+        $entityBackend = $this->findByName($backend);
+        if(!$entityBackend) {
+            throw new \Exception("backend $backend not found in database");
+            return false;
+        }
+
+        $entityBackend->setModule($module);
+        $entityBackend->setLogin($login);
+        $entityBackend->setPassword($password);
+        $entityBackend->setMail($mail);
+        $em->persist($entityBackend);
+        $em->flush();
+        return $entityBackend;
+    }
 }

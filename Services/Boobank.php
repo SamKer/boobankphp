@@ -1,6 +1,7 @@
 <?php
 namespace SamKer\BoobankBundle\Services;
 
+use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\Validator\Constraints\DateTime;
@@ -80,6 +81,12 @@ class Boobank
     private $sBackendsPath;
 
     /**
+     * Path to rules for awtch command
+     * @var string path to dir
+     */
+    private $watchRulesDir;
+
+    /**
      * path to export csv file
      * @var string
      */
@@ -101,19 +108,18 @@ class Boobank
         "_backend" => "bankID",
         "website" => "par",
         "login" => "log",
-        "password" => "pass"
+        "password" => "pass",
+        "mail" => "mail"
     ];
 
-    /**
-     * Liste de clé pour les exports de données
-     *
-     * @var array
-     */
-    private $aSerial = [
-        'date',
-        'raw',
-        'amount'
+    private $watchModel = [
+      "survey" => ["history" => true, "list"=> true],
+      "action" => ["database"=> true, "mail"=>true],
+        "lastchanged" => ["list"=>false, "history"=>false]
+
     ];
+
+
 
     /**
      * Instance of Shell
@@ -126,7 +132,7 @@ class Boobank
      * Database service boobank
      * @var Database
      */
-    private $database;
+    private $database = false;
 
     /**
      * @var \Swift_Mailer
@@ -137,6 +143,11 @@ class Boobank
      * @var string mail Admin
      */
     private $mailAdmin;
+
+    /**
+     * @var \Twig_Environment
+     */
+    private $twig;
 
     /**
      * Chemin du bin user
@@ -166,13 +177,15 @@ class Boobank
      */
     private $params = [
         "bin_path" => "/usr/bin",
-        "dateInterval" => "P30D",
+        "database" => false,
+        "dateInterval" => "P1D",
         "filters" => [
             "list" => ["id"],
             "history" => ["id"]
-
         ]
     ];
+
+
 
     /**
      * crée le dossier local boobank pour d'éventuels exports
@@ -183,16 +196,18 @@ class Boobank
      * @param \Swift_Mailer $mailer
      * @params string $mailAdmin
      */
-    public function __construct(Shell $shell, $params = [], Database $database, \Swift_Mailer $mailer, $mailAdmin)
+    public function __construct(Shell $shell, $params = [], Database $database, \Swift_Mailer $mailer, $mailAdmin, \Twig_Environment $twig)
     {
         // dependances
         $this->shell = $shell;
-        $this->database = $database;
+
         $this->mailer = $mailer;
         $this->mailAdmin = $mailAdmin;
+        $this->twig = $twig;
+
         $this->fs = new Filesystem();
 
-        //params
+        //params---------------------------------------------
         $this->params = array_merge_recursive($this->params, $params);
         //fix to merge simple value
         if (is_array($this->params['bin_path'])) {
@@ -201,30 +216,35 @@ class Boobank
         if (is_array($this->params['dateInterval'])) {
             $this->params['dateInterval'] = array_pop($this->params['dateInterval']);
         }
+        if (is_array($this->params['database'])) {
+            $this->params['database'] = array_pop($this->params['database']);
+        }
+        //--------------------------------------------------
 
+        //data saved in base
+        if($this->params['database'] === true) {
+            $this->database = $database;
+        }
 
         //define pathcommands-----------
-        $this->cmdPathWeboob = $this->shell->getPathCommand("weboob");
-        if (!$this->cmdPathWeboob) {
+
             $this->cmdPathWeboob = $this->params["bin_path"] . "/weboob";
             if (!$this->fs->exists($this->cmdPathWeboob)) {
                 throw new \Exception("class php Boobank needs weboob command");
             }
-        }
-        $this->cmdPathWeboobConfig = $this->shell->getPathCommand("weboob-config");
-        if (!$this->cmdPathWeboobConfig) {
+
+
             $this->cmdPathWeboobConfig = $this->params["bin_path"] . "/weboob-config";
             if (!$this->fs->exists($this->cmdPathWeboobConfig)) {
                 throw new \Exception("class php Boobank needs weboob-config command");
             }
-        }
-        $this->cmdPathBoobank = $this->shell->getPathCommand("boobank");
-        if (!$this->cmdPathBoobank) {
+
+
             $this->cmdPathBoobank = $this->params["bin_path"] . "/boobank";
             if (!$this->fs->exists($this->cmdPathBoobank)) {
                 throw new \Exception("class php Boobank needs boobank command");
             }
-        }
+
         //----------
 
         //setting home
@@ -245,35 +265,17 @@ class Boobank
             $this->fs->touch($this->sBackendsPath);
         }
 
+        //specific rules at
+        $this->watchRulesDir = $this->shell->home() . "/.config/weboob/watchrules";
+        if (!$this->fs->exists($this->watchRulesDir)) {
+            $this->fs->mkdir($this->watchRulesDir);
+        }
+
         $this->getBackEnds();
     }
 
 
-    /**
-     * Definit une clé serialisé par 3champs
-     *
-     * @param string $p1
-     * @param string $p2
-     * @param string $p3
-     *//*
-    public function setSerialKeys($p1, $p2, $p3)
-    {
-        $this->aSerial = array(
-            $p1,
-            $p2,
-            $p3
-        );
-    }*/
 
-    /**
-     * Ajoute une clé pour le serial
-     *
-     * @param string $p
-     *//*
-    public function addToSerialKey($p)
-    {
-        $this->aSerial[] = $p;
-    }*/
 
     /**
      * List account for specific backend
@@ -297,6 +299,7 @@ class Boobank
         //filter for backend
         $csv = $this->parseCSV();
         $list = $this->filter($csv, $backend);
+
 
 
         return $list;
@@ -354,7 +357,7 @@ class Boobank
      *            password
      * @return void
      */
-    public function addBackend($sIdBackEnd, $sIdBank, $sLogin, $sPassword)
+    public function addBackend($sIdBackEnd, $sIdBank, $sLogin, $sPassword, $mail)
     {
         //test if backend already exist
         if (isset($this->aBackEnds[$sIdBackEnd])) {
@@ -380,10 +383,36 @@ class Boobank
         $this->aBackEnds[$sIdBackEnd]['password'] = $sPassword;
         //save in file config, used by boobank cmd
         $this->saveBackends();
-        //save in database, do at first a list account for populate database
-        $listAccounts = $this->listAccount($sIdBackEnd);
-        //add backend and accounts linked in database
-        $this->database->addBackend($sIdBackEnd, $sIdBank, $sLogin, $sPassword, $listAccounts);
+
+        if($this->database === true) {
+            //save in database, do at first a list account for populate database
+            $listAccounts = $this->listAccount($sIdBackEnd);
+            //add backend and accounts linked in database
+            $this->database->addBackend($sIdBackEnd, $sIdBank, $sLogin, $sPassword, $listAccounts);
+        }
+    }
+
+    /**
+     * @param string $sIdBackEnd
+     * @param string $sIdBank
+     * @param string $sLogin
+     * @param string $sPassword
+     * @param string $mail
+     */
+    public function editBackend($sIdBackEnd, $sIdBank, $sLogin, $sPassword, $mail) {
+        $this->aBackEnds[$sIdBackEnd] = $this->aBackEndModel;
+        $this->aBackEnds[$sIdBackEnd]['_backend'] = $sIdBank;
+        $this->aBackEnds[$sIdBackEnd]['login'] = $sLogin;
+        $this->aBackEnds[$sIdBackEnd]['password'] = $sPassword;
+        $this->aBackEnds[$sIdBackEnd]['mail'] = $mail;
+        //save in file config, used by boobank cmd
+        $this->saveBackends();
+        if($this->database) {
+            //save in database, do at first a list account for populate database
+            $listAccounts = $this->listAccount($sIdBackEnd);
+            //add backend and accounts linked in database
+            $this->database->updateBackend($sIdBackEnd, $sIdBank, $sLogin, $sPassword, $mail, $listAccounts);
+        }
     }
 
     /**
@@ -402,8 +431,10 @@ class Boobank
         $this->aBackEnds = $a;
         //remove in config
         $this->saveBackends();
-        //remove in database
-        $this->database->removeBackend($backend);
+        if($this->database) {
+            //remove in database
+            $this->database->removeBackend($backend);
+        }
     }
 
     /**
@@ -634,17 +665,90 @@ class Boobank
     /**
      * Survey account
      *
+     * @param string $backend
+     * @param string $account
+     * @return array report
      */
-    public function watch() {
-        $rules = $this->params['watch'];
-        foreach ($rules as $backend => $accounts) {
-            if(!$this->getBackend($backend)) {
-                throw new \Exception("backend $backend doesn't exist");
+    public function watch($backend = false, $account = false) {
+        $result = [];
+
+        foreach ($this->getBackEnds() as $backendId => $b) {
+            if($backend !== false && $backendId !== $backend) {
+                continue;
             }
-            foreach ($accounts as $account => $rule) {
-                $survey = $this->survey($backend, $account, $rule['survey']);
-                $this->action($backend, $account, $rule['action'], $survey);
+            $accounts = $this->getWatchRules($backendId);
+            if($accounts && count($accounts) > 0) {
+                foreach ($accounts as $accountid => $rules) {
+                    //survey return all changes
+                    $survey = $this->survey($backendId, $accountid, $rules['survey']);
+                    //we pass report to action
+                    $result[$backendId] = $this->action($backendId, $accountid, $rules['action'], $survey);
+                    if(count($survey['history'])>0) {
+                        $rules['lastchanged']['history'] = $survey['history'][count($survey['history'])-1]['hash'];
+                        $this->saveWatchRules($backendId, $accountid, $rules);
+                    }
+                    if(count($survey['list'])>0) {
+                        $rules['lastchanged']['list'] = $survey['list']['balance'];
+                        $this->saveWatchRules($backendId, $accountid, $rules);
+                    }
+
+
+                }
             }
+        }
+        return $result;
+    }
+
+    /**
+     * Get specific rules for watch command for specific account in backend
+     * @param string $backend
+     * @param string $account
+     * @return array $rules
+     */
+    public function getWatchRules($backend, $account = false) {
+        $pathRules = $this->watchRulesDir . "/" . $backend;
+        if(!$this->fs->exists($pathRules)) {
+            //create rules
+            $this->saveWatchRules($backend, $account, $this->watchModel);
+            return $this->getWatchRules($backend, $account);
+        } else {
+            $watchrules = json_decode(file_get_contents($pathRules), true);
+            if($account) {
+                if(!isset($watchrules[$account])) {
+                    $this->saveWatchRules($backend, $account, $this->watchModel);
+                    return $this->getWatchRules($backend, $account);
+                }
+                return $watchrules[$account];
+            } else {
+                return $watchrules;
+            }
+        }
+
+    }
+
+    /**
+     * Save rule for watch command
+     * @param $backend
+     * @param $account
+     * @param $rules
+     */
+    public function saveWatchRules($backend, $account = false, $rules) {
+        $pathRules = $this->watchRulesDir . "/" . $backend;
+        if($this->fs->exists($pathRules)) {
+            $watchrules = json_decode(file_get_contents($pathRules), true);
+        } else {
+            if($account) {
+                $watchrules = [$account => $this->watchModel];
+                $watchrules[$account] = $rules;
+            } else {
+                $watchrules = [];
+            }
+        }
+
+        file_put_contents($pathRules, json_encode($watchrules));
+
+        if($this->database && $account) {
+            $this->database->saveWatchRules($backend, $account, $rules);
         }
     }
 
@@ -652,24 +756,47 @@ class Boobank
      * Run command specified in parameters for watch
      * @param string $backend
      * @param string $account
-     * @param array $rule
+     * @param array $rules
      * @return array $listResult (history or account info)
      * @throws \Exception
      */
-    private function survey($backend, $account, $rule) {
+    private function survey($backend, $account, $rules, $lastChanged = ["history"=>false, "list"=>false]) {
+        $result = ["list"=> [], "history"=>[]];
+        foreach ($rules as $rule => $v) {
+            if($v !== true) {
+                continue;
+            }
 //        dump($backend);dump($account);dump($rule);die;
-        switch ($rule) {
-            case 'amount':
-                    //todo
-                break;
-            case 'history':
+            switch ($rule) {
+                case 'list':
+                    $list = $this->listAccount($backend);
+                    foreach ($list as $a) {
+                        if($a['id'] === $account) {
+                            if($a['balance'] !== $lastChanged['list']) {
+                                $result['list'] = $a;
+                                break;
+                            }
+                        }
+                    }
+                    break;
+                case 'history':
                     $list = $this->getHistory($account, $backend);
-                    return $list;
-                break;
-            default:
-                throw new \Exception("rule $rule not expected here");
-                break;
+                    $b = 0;
+                    foreach ($list as $i=>$item) {
+                        if($item['hash'] === $lastChanged['history']) {
+                            $b = $i;
+                            break;
+                        }
+                    }
+                    $list = array_splice($list, $b);
+                    $result['history'] = $list;
+                    break;
+                default:
+                    throw new \Exception("rule $rule not expected here");
+                    break;
+            }
         }
+        return $result;
     }
 
     /**
@@ -682,22 +809,35 @@ class Boobank
      * @throws \Exception
      */
     private function action($backend, $account, $rule, $survey) {
-//        dump($backend);dump($account);dump($rule);die;
+//        dump($backend);dump($account);
         $inserts = 0;
         $mails = 0;
-        foreach ($rule as $action) {
+        foreach ($rule as $action=>$v) {
+            if($v !== true) {
+                continue;
+            }
             switch ($action) {
                 case 'mail':
-                    foreach ($survey as $row) {
-                        $i = $this->sendMail($backend, $account, $row);
-                        if ($i) {
-                            $mails++;
-                        }
+                    //mail list
+                    if(count($survey['list'])>0) {
+                        $mails++;
+                        $this->sendMail($backend, $account, $survey['list'], "list");
                     }
+                    //mail history
+                    if(count($survey['history'])>0) {
+                        $mails++;
+                        $this->sendMail($backend, $account, $survey['history']);
+                    }
+
+
                     break;
                 case 'database':
-                    foreach ($survey as $row) {
-//                        dump($row);die;
+                    //list
+
+                    //history
+                    //tri inversé
+                    $survey['history'] = array_reverse($survey['history']);
+                    foreach ($survey['history'] as $row) {
                         $i = $this->database->addTransaction($backend, $account, $row);
                         if($i) {
                             $inserts++;
@@ -715,18 +855,22 @@ class Boobank
         ];
     }
 
-    public function sendMail($backend, $account, $row) {
+    public function sendMail($backend, $account, $rows, $model = "history") {
         $message = (new \Swift_Message('[RYUKENTEAM WATCH] Survey Bank for you and found new transactions'))
             ->setFrom($this->mailAdmin)
-            ->setTo('recipient@example.com')
-            ->setBody(
-                $this->renderView(
-                // templates/emails/registration.html.twig
-                    'emails/registration.html.twig',
-                    array('name' => $name)
-                ),
+            ->setTo('sam.chatouille@gmail.com');
+        if($model === "history") {
+            $message->setBody(
+                $this->twig->render("SamKerBoobankBundle:Mail:history.html.twig", ["account" => $account, "list" => $rows]),
                 'text/html'
-            )
+            );
+        } else {
+            $rows['date'] = (new \DateTime())->format('Y-m-d');
+            $message->setBody(
+                $this->twig->render("SamKerBoobankBundle:Mail:list.html.twig", ["account" => $account, "list" => $rows]),
+                'text/html'
+            );
+        }
             /*
              * If you also want to include a plaintext version of the message
             ->addPart(
@@ -738,6 +882,7 @@ class Boobank
             )
             */
         ;
+        $this->mailer->send($message);
 
     }
 

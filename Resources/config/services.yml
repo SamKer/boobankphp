@@ -7,4 +7,4 @@ services:
         arguments: []
     boobank:
         class: SamKer\BoobankBundle\Services\Boobank
-        arguments: [ "@boobank.shell", "%boobank%", "@boobank.database" , "@swiftmailer" , "%mailer_user%" ]
+        arguments: [ "@boobank.shell", "%boobank%", "@boobank.database" , "@swiftmailer.mailer" , "%mailer_user%", "@twig"]

@@ -38,19 +38,19 @@ class AccountsRepository extends \Doctrine\ORM\EntityRepository
      * @throws \Doctrine\ORM\OptimisticLockException
      */
 public function addAccount($entityBackend, $id, $label, $amount) {
-    $em = $this->getEntityManager();
-    if($this->findByName($id, $entityBackend->getId())){
-        throw new \Exception("account $id already exist");
-    }
-    $account = new Accounts();
-    $account->setAccount($id);
-    $account->setAccountLabel($label);
-    $account->setAmount($amount);
-    $account->setLastModif(new \DateTime());
-    $account->setBackend($entityBackend);
-    $em->persist($account);
-    $em->flush();
-return $account;
+        $em = $this->getEntityManager();
+        if($this->findByName($id, $entityBackend->getId())){
+           return false;
+        }
+        $account = new Accounts();
+        $account->setAccount($id);
+        $account->setAccountLabel($label);
+        $account->setAmount($amount);
+        $account->setLastModif(new \DateTime());
+        $account->setBackend($entityBackend);
+        $em->persist($account);
+        $em->flush();
+    return $account;
 }
 
     /**
@@ -63,5 +63,27 @@ public function removeAccountByBackend($backendId) {
         ->where("a.backend = :backendid")
         ->setParameter("backendid", $backendId);
     $qb->getQuery()->execute();
+}
+
+
+    /**
+     * @param string $backend
+     * @param string $account
+     * @param array $rules
+     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \Exception
+     */
+public function saveWatchRules($backend, $account, $rules) {
+
+
+    $accountEntity = $this->findByName($account, $backend);
+    if(!$accountEntity) {
+        throw new \Exception("account $account not exist in database");
+    }
+    $accountEntity->setSurvey($rules['survey']);
+    $accountEntity->setAction($rules['action']);
+    $em = $this->getEntityManager();
+    $em->persist($accountEntity);
+    $em->flush();
 }
 }

@@ -51,6 +51,12 @@ class Backends
     private $password;
 
 
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="mail", type="string", length=255)
+     */
+    private $mail;
 
 
     /**
@@ -157,6 +163,29 @@ class Backends
     public function getPassword()
     {
         return $this->password;
+    }
+    /**
+     * Set Mail
+     *
+     * @param string $mail
+     *
+     * @return Backends
+     */
+    public function setMail($mail)
+    {
+        $this->mail = $mail;
+
+        return $this;
+    }
+
+    /**
+     * Get Mail
+     *
+     * @return string
+     */
+    public function getMail()
+    {
+        return $this->mail;
     }
 
 

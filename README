@@ -6,6 +6,7 @@ tools for weboob/boobank usage in php
  - apt-get install weboob weboob-qt
  - weboob-config-update
 
+
  a better solution is to use venvs as defined at http://weboob.org/install
 
 ## installation

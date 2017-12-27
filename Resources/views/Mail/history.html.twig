@@ -1,0 +1,10 @@
+<h1>You have new transaction for {{ account }}</h1>
+
+<table>
+    <thead><tr><td>date</td><td>label</td><td>amount</td></tr></thead>
+    <tbody>
+    {% for row in list %}
+        <tr><td>{{ row.date }}</td><td>{{ row.label }}</td><td>{{ row.amount }}</td></tr>
+    {% endfor %}
+    </tbody>
+</table>

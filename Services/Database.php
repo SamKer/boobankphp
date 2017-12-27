@@ -83,4 +83,21 @@ class Database
 
     }
 
+public function updateBackend ($backend, $module, $login, $password, $mail, $listAccounts) {
+    $repoBackends = $this->entityManager->getRepository("SamKerBoobankBundle:Backends");
+    $entityBackend = $repoBackends->updateBackend($backend, $module, $login, $password, $mail);
+
+    $repoAccounts = $this->entityManager->getRepository("SamKerBoobankBundle:Accounts");
+    foreach ($listAccounts as $account) {
+        $repoAccounts->addAccount($entityBackend, $account['id'], $account['label'], $account['balance']);
+    }
+}
+
+public function saveWatchRules($backend, $account, $rules){
+    $repoBackends = $this->entityManager->getRepository("SamKerBoobankBundle:Backends");
+    $entityBackend = $repoBackends->findByName($backend);
+    $repoAccounts = $this->entityManager->getRepository("SamKerBoobankBundle:Accounts");
+    $repoAccounts->saveWatchRules($entityBackend->getId(), $account, $rules);
+}
+
 }
