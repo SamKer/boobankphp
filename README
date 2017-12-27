@@ -2,14 +2,22 @@
 
 tools for weboob/boobank usage in php
 
-## dependencies
- - apt-get install weboob weboob-qt
- - weboob-config-update
+## Weboob install
+weboob need updates so the best way to use it is with venvs
+ - apt-get install python-virtualenv
+
+for using with web app, the home for www-data is /var/www
+$ mkdir -p ~/.local/venvs
+$ virtualenv ~/.local/venvs/weboob
+$ source ~/.local/venvs/weboob/bin/activate
+(weboob) $ pip install git+https://git.weboob.org/weboob/devel.git
+(weboob) $ pip install pdfminer # add other optional dependencies if you want
+(weboob) $ weboob-config update
+(weboob) $ deactivate
+$
 
 
- a better solution is to use venvs as defined at http://weboob.org/install
-
-## installation
+## installation bundle
 
 
 Step 1: Download the Bundle
