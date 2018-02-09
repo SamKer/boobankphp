@@ -16,25 +16,23 @@ class BoobankWatchCommand extends ContainerAwareCommand
             ->setDescription('survey account')
             ->addOption('backend', 'b', InputOption::VALUE_OPTIONAL, 'watch specific backend', false)
             ->addOption('account', 'a', InputOption::VALUE_OPTIONAL, 'watch specific account for selected backend', false)
-        ;
+            ->addOption('date', 'd', InputOption::VALUE_OPTIONAL, 'watch first time since specific date', false);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $backend = $input->getOption('backend');
         $account = $input->getOption('account');
+        $date = $input->getOption('date');
 
-        if($backend === null && $account !== null) {
+        if ($backend === null && $account !== null) {
             throw new \Exception("a specific backend have to be defined, with --backend option");
         }
         $boobank = $this->getContainer()->get('boobank');
 
 
-            $result = $boobank->watch($backend, $account);
-            dump($result);
-
-
-
+        $result = $boobank->watch($backend, $account, $date);
+        dump($result);
 
 
         $output->writeln('job done');

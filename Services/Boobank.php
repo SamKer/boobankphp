@@ -477,7 +477,7 @@ class Boobank
         if ($result['error'] !== "") {
             throw new \Exception("history failed: " . $result['error']);
         }
-        dump($result);die;
+//        dump($result);die;
         $csv = $this->parseCSV();
         $list = $this->filter($csv, $backend, $account);
 
@@ -578,12 +578,17 @@ class Boobank
      */
     public function parseCSV()
     {
+        $a = [];
         $content = \file($this->shell->getOutputFile());
+
         $content = array_map(function ($r) {
             return str_replace("\r\n", "", trim($r));
         }, $content);
-        $a = [];
 
+
+        if(count($content) === 0) {
+            return $a;
+        }
         $headers = explode(";", $content[0]);
         for ($i = 1; $i <= count($content) - 1; $i++) {
             $r = explode(";", $content[$i]);
@@ -668,9 +673,10 @@ class Boobank
      *
      * @param string $backend
      * @param string $account
+     * @param date $date
      * @return array report
      */
-    public function watch($backend = false, $account = false)
+    public function watch($backend = false, $account = false, $date = false)
     {
         $result = [];
 
@@ -679,13 +685,13 @@ class Boobank
                 continue;
             }
             $accounts = $this->getWatchRules($backendId);
-
+//dump($accounts);die;
             if ($accounts && count($accounts) > 0) {
                 foreach ($accounts as $accountid => $rules) {
                     if (!$account || $account === $accountid) {
                         //survey return all changes
-                        $survey = $this->survey($backendId, $accountid, $rules['survey'], $rules['lastchanged']);
-dump($survey);
+                        $survey = $this->survey($backendId, $accountid, $rules['survey'], $rules['lastchanged'], $date);
+
                         //we pass report to action
                         $result[$backendId] = $this->action($backendId, $accountid, $rules['action'], $survey);
                         if (count($survey['history']) > 0) {
@@ -769,10 +775,12 @@ dump($survey);
      * @param string $backend
      * @param string $account
      * @param array $rules
+     * @param array $lastChanged
+     * @param string $date (Y-m-d)
      * @return array $listResult (history or account info)
      * @throws \Exception
      */
-    private function survey($backend, $account, $rules, $lastChanged = ["history" => false, "list" => false])
+    private function survey($backend, $account, $rules, $lastChanged = ["history" => false, "list" => false], $date = false)
     {
         $result = ["list" => [], "history" => []];
         foreach ($rules as $rule => $v) {
@@ -793,7 +801,7 @@ dump($survey);
                     }
                     break;
                 case 'history':
-                    $list = $this->getHistory($account, $backend);
+                    $list = $this->getHistory($account, $backend, $date);
                     $b = 0;
                     foreach ($list as $i => $item) {
                         if ($item['hash'] == $lastChanged['history']) {

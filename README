@@ -27,7 +27,7 @@ Open a command console, enter your project directory and execute the
 following command to download the latest stable version of this bundle:
 
 ```console
-$ composer require boobank "~1"
+$ composer require SamKer/boobankphp "~1"
 ```
 
 This command requires you to have Composer installed globally, as explained
@@ -80,6 +80,11 @@ you can use command line as follow
 
 - boobank:account:list [backend]
 - boobank:account:history -b [backend] -a [account] -d [date] -f [filters,..]
+
+- boobank:watch   [-b [backend]] [-a [account]] [ -d [date(Y-m-d)]]
+- boobank:watch:edit -b [backend] -a [account]
+
+
 ```
 
 or use service
