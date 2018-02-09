@@ -51,7 +51,7 @@ class AppKernel extends Kernel
     {
         $bundles = array(
             // ...
-            new SamKer\BoobankBundle\SamBoobankBundle(),
+            new SamKer\BoobankBundle\SamKerBoobankBundle(),
         );
 
         // ...
@@ -93,6 +93,7 @@ $history = $boobank->getHistory($account, $backend, $date, $filters);
 
 for use in web mod
 create directory
+```bash
 /var/www/.config/
 /var/www/.local/
 
@@ -101,3 +102,4 @@ chown www-data: -R /var/www/.local/
 
 chmod 700 -R /var/www/.config/
 chmod 700 -R /var/www/.local/
+```

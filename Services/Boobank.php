@@ -1,4 +1,5 @@
 <?php
+
 namespace SamKer\BoobankBundle\Services;
 
 use Symfony\Component\Config\Definition\Exception\Exception;
@@ -113,12 +114,11 @@ class Boobank
     ];
 
     private $watchModel = [
-      "survey" => ["history" => true, "list"=> true],
-      "action" => ["database"=> true, "mail"=>true],
-        "lastchanged" => ["list"=>false, "history"=>false]
+        "survey" => ["history" => false, "list" => false],
+        "action" => ["database" => false, "mail" => false],
+        "lastchanged" => ["list" => false, "history" => true]
 
     ];
-
 
 
     /**
@@ -186,7 +186,6 @@ class Boobank
     ];
 
 
-
     /**
      * crée le dossier local boobank pour d'éventuels exports
      *
@@ -222,28 +221,28 @@ class Boobank
         //--------------------------------------------------
 
         //data saved in base
-        if($this->params['database'] === true) {
+        if ($this->params['database'] === true) {
             $this->database = $database;
         }
 
         //define pathcommands-----------
 
-            $this->cmdPathWeboob = $this->params["bin_path"] . "/weboob";
-            if (!$this->fs->exists($this->cmdPathWeboob)) {
-                throw new \Exception("class php Boobank needs weboob command");
-            }
+        $this->cmdPathWeboob = $this->params["bin_path"] . "/weboob";
+        if (!$this->fs->exists($this->cmdPathWeboob)) {
+            throw new \Exception("class php Boobank needs weboob command");
+        }
 
 
-            $this->cmdPathWeboobConfig = $this->params["bin_path"] . "/weboob-config";
-            if (!$this->fs->exists($this->cmdPathWeboobConfig)) {
-                throw new \Exception("class php Boobank needs weboob-config command");
-            }
+        $this->cmdPathWeboobConfig = $this->params["bin_path"] . "/weboob-config";
+        if (!$this->fs->exists($this->cmdPathWeboobConfig)) {
+            throw new \Exception("class php Boobank needs weboob-config command");
+        }
 
 
-            $this->cmdPathBoobank = $this->params["bin_path"] . "/boobank";
-            if (!$this->fs->exists($this->cmdPathBoobank)) {
-                throw new \Exception("class php Boobank needs boobank command");
-            }
+        $this->cmdPathBoobank = $this->params["bin_path"] . "/boobank";
+        if (!$this->fs->exists($this->cmdPathBoobank)) {
+            throw new \Exception("class php Boobank needs boobank command");
+        }
 
         //----------
 
@@ -275,8 +274,6 @@ class Boobank
     }
 
 
-
-
     /**
      * List account for specific backend
      * @param string $backend
@@ -292,14 +289,12 @@ class Boobank
         if ($result['code'] !== 0) {
             throw new \Exception("list account failed: " . $result['error']);
         }
-        if($result['error'] !== "") {
+        if ($result['error'] !== "") {
             throw new \Exception("list account failed: " . $result['error']);
         }
-
         //filter for backend
         $csv = $this->parseCSV();
         $list = $this->filter($csv, $backend);
-
 
 
         return $list;
@@ -384,7 +379,7 @@ class Boobank
         //save in file config, used by boobank cmd
         $this->saveBackends();
 
-        if($this->database === true) {
+        if ($this->database === true) {
             //save in database, do at first a list account for populate database
             $listAccounts = $this->listAccount($sIdBackEnd);
             //add backend and accounts linked in database
@@ -399,7 +394,8 @@ class Boobank
      * @param string $sPassword
      * @param string $mail
      */
-    public function editBackend($sIdBackEnd, $sIdBank, $sLogin, $sPassword, $mail) {
+    public function editBackend($sIdBackEnd, $sIdBank, $sLogin, $sPassword, $mail)
+    {
         $this->aBackEnds[$sIdBackEnd] = $this->aBackEndModel;
         $this->aBackEnds[$sIdBackEnd]['_backend'] = $sIdBank;
         $this->aBackEnds[$sIdBackEnd]['login'] = $sLogin;
@@ -407,7 +403,7 @@ class Boobank
         $this->aBackEnds[$sIdBackEnd]['mail'] = $mail;
         //save in file config, used by boobank cmd
         $this->saveBackends();
-        if($this->database) {
+        if ($this->database) {
             //save in database, do at first a list account for populate database
             $listAccounts = $this->listAccount($sIdBackEnd);
             //add backend and accounts linked in database
@@ -431,7 +427,7 @@ class Boobank
         $this->aBackEnds = $a;
         //remove in config
         $this->saveBackends();
-        if($this->database) {
+        if ($this->database) {
             //remove in database
             $this->database->removeBackend($backend);
         }
@@ -478,9 +474,10 @@ class Boobank
         if ($result['code'] !== 0) {
             throw new \Exception("history failed");
         }
-        if($result['error'] !== "") {
+        if ($result['error'] !== "") {
             throw new \Exception("history failed: " . $result['error']);
         }
+        dump($result);die;
         $csv = $this->parseCSV();
         $list = $this->filter($csv, $backend, $account);
 
@@ -581,16 +578,20 @@ class Boobank
      */
     public function parseCSV()
     {
-        $resource = (new File($this->shell->getOutputFile()))->openFile();
+        $content = \file($this->shell->getOutputFile());
+        $content = array_map(function ($r) {
+            return str_replace("\r\n", "", trim($r));
+        }, $content);
         $a = [];
-        $headers = explode(";", $resource->fgetcsv()[0]);
 
-        while ($row = $resource->fgetcsv()) {
-            $r = explode(";", $row[0]);
+        $headers = explode(";", $content[0]);
+        for ($i = 1; $i <= count($content) - 1; $i++) {
+            $r = explode(";", $content[$i]);
             if ($r[0] != "") {
                 $a[] = array_combine($headers, $r);
             }
         }
+
         return $a;
     }
 
@@ -627,7 +628,7 @@ class Boobank
      */
     private function getFilters($cmd, $filters = false)
     {
-        if($filters) {
+        if ($filters) {
 
             return $filters = "--select id," . $filters;
         }
@@ -650,11 +651,11 @@ class Boobank
      */
     private function getDate($date = false)
     {
-        if($date) {
-            if(is_string($date)) {
+        if ($date) {
+            if (is_string($date)) {
                 return $date;
             }
-            if($date instanceof \DateTime) {
+            if ($date instanceof \DateTime) {
                 return $date->format("Y-m-d");
             }
         }
@@ -669,30 +670,32 @@ class Boobank
      * @param string $account
      * @return array report
      */
-    public function watch($backend = false, $account = false) {
+    public function watch($backend = false, $account = false)
+    {
         $result = [];
 
         foreach ($this->getBackEnds() as $backendId => $b) {
-            if($backend !== false && $backendId !== $backend) {
+            if ($backend !== false && $backendId !== $backend) {
                 continue;
             }
             $accounts = $this->getWatchRules($backendId);
-            if($accounts && count($accounts) > 0) {
+
+            if ($accounts && count($accounts) > 0) {
                 foreach ($accounts as $accountid => $rules) {
-                    //survey return all changes
-                    $survey = $this->survey($backendId, $accountid, $rules['survey']);
-                    //we pass report to action
-                    $result[$backendId] = $this->action($backendId, $accountid, $rules['action'], $survey);
-                    if(count($survey['history'])>0) {
-                        $rules['lastchanged']['history'] = $survey['history'][count($survey['history'])-1]['hash'];
+                    if (!$account || $account === $accountid) {
+                        //survey return all changes
+                        $survey = $this->survey($backendId, $accountid, $rules['survey'], $rules['lastchanged']);
+dump($survey);
+                        //we pass report to action
+                        $result[$backendId] = $this->action($backendId, $accountid, $rules['action'], $survey);
+                        if (count($survey['history']) > 0) {
+                            $rules['lastchanged']['history'] = $survey['history'][count($survey['history']) - 1]['hash'];
+                        }
+                        if (count($survey['list']) > 0) {
+                            $rules['lastchanged']['list'] = $survey['list']['balance'];
+                        }
                         $this->saveWatchRules($backendId, $accountid, $rules);
                     }
-                    if(count($survey['list'])>0) {
-                        $rules['lastchanged']['list'] = $survey['list']['balance'];
-                        $this->saveWatchRules($backendId, $accountid, $rules);
-                    }
-
-
                 }
             }
         }
@@ -705,24 +708,25 @@ class Boobank
      * @param string $account
      * @return array $rules
      */
-    public function getWatchRules($backend, $account = false) {
+    public function getWatchRules($backend, $account = false)
+    {
         $pathRules = $this->watchRulesDir . "/" . $backend;
-        if(!$this->fs->exists($pathRules)) {
+        if (!$this->fs->exists($pathRules)) {
             //create rules
             $this->saveWatchRules($backend, $account, $this->watchModel);
-            return $this->getWatchRules($backend, $account);
-        } else {
-            $watchrules = json_decode(file_get_contents($pathRules), true);
-            if($account) {
-                if(!isset($watchrules[$account])) {
-                    $this->saveWatchRules($backend, $account, $this->watchModel);
-                    return $this->getWatchRules($backend, $account);
-                }
-                return $watchrules[$account];
-            } else {
-                return $watchrules;
-            }
         }
+
+        $watchrules = json_decode(file_get_contents($pathRules), true);
+        if (!$account) {
+            return $watchrules;
+        }
+
+        if (!isset($watchrules[$account])) {
+            $watchrules[$account] = $this->watchModel;
+            $this->saveWatchRules($backend, $account, $this->watchModel);
+        }
+
+        return $watchrules[$account];
 
     }
 
@@ -732,22 +736,30 @@ class Boobank
      * @param $account
      * @param $rules
      */
-    public function saveWatchRules($backend, $account = false, $rules) {
+    public function saveWatchRules($backend, $account = false, $rules = false)
+    {
         $pathRules = $this->watchRulesDir . "/" . $backend;
-        if($this->fs->exists($pathRules)) {
-            $watchrules = json_decode(file_get_contents($pathRules), true);
-        } else {
-            if($account) {
-                $watchrules = [$account => $this->watchModel];
-                $watchrules[$account] = $rules;
-            } else {
-                $watchrules = [];
-            }
+
+        if (!$this->fs->exists($pathRules)) {
+            file_put_contents($pathRules, json_encode([]));
+        }
+        if (!$account) {
+            return;
+        }
+        $backendRules = json_decode(file_get_contents($pathRules), true);
+
+        if (!isset($backendRules[$account])) {
+            $backendRules[$account] = $this->watchModel;
         }
 
-        file_put_contents($pathRules, json_encode($watchrules));
+        if (!$rules) {
+            $backendRules[$account] = $this->watchModel;
+        } else {
+            $backendRules[$account] = $rules;
+        }
 
-        if($this->database && $account) {
+        file_put_contents($pathRules, json_encode($backendRules));
+        if ($this->database && $account) {
             $this->database->saveWatchRules($backend, $account, $rules);
         }
     }
@@ -760,10 +772,11 @@ class Boobank
      * @return array $listResult (history or account info)
      * @throws \Exception
      */
-    private function survey($backend, $account, $rules, $lastChanged = ["history"=>false, "list"=>false]) {
-        $result = ["list"=> [], "history"=>[]];
+    private function survey($backend, $account, $rules, $lastChanged = ["history" => false, "list" => false])
+    {
+        $result = ["list" => [], "history" => []];
         foreach ($rules as $rule => $v) {
-            if($v !== true) {
+            if ($v !== true) {
                 continue;
             }
 //        dump($backend);dump($account);dump($rule);die;
@@ -771,8 +784,8 @@ class Boobank
                 case 'list':
                     $list = $this->listAccount($backend);
                     foreach ($list as $a) {
-                        if($a['id'] === $account) {
-                            if($a['balance'] !== $lastChanged['list']) {
+                        if ($a['id'] == $account) {
+                            if ($a['balance'] != $lastChanged['list']) {
                                 $result['list'] = $a;
                                 break;
                             }
@@ -782,9 +795,9 @@ class Boobank
                 case 'history':
                     $list = $this->getHistory($account, $backend);
                     $b = 0;
-                    foreach ($list as $i=>$item) {
-                        if($item['hash'] === $lastChanged['history']) {
-                            $b = $i;
+                    foreach ($list as $i => $item) {
+                        if ($item['hash'] == $lastChanged['history']) {
+                            $b = $i+1;
                             break;
                         }
                     }
@@ -808,23 +821,24 @@ class Boobank
      * @return array [database => nb inserted, mail => nb mail send]
      * @throws \Exception
      */
-    private function action($backend, $account, $rule, $survey) {
+    private function action($backend, $account, $rule, $survey)
+    {
 //        dump($backend);dump($account);
         $inserts = 0;
         $mails = 0;
-        foreach ($rule as $action=>$v) {
-            if($v !== true) {
+        foreach ($rule as $action => $v) {
+            if ($v !== true) {
                 continue;
             }
             switch ($action) {
                 case 'mail':
                     //mail list
-                    if(count($survey['list'])>0) {
+                    if (count($survey['list']) > 0) {
                         $mails++;
                         $this->sendMail($backend, $account, $survey['list'], "list");
                     }
                     //mail history
-                    if(count($survey['history'])>0) {
+                    if (count($survey['history']) > 0) {
                         $mails++;
                         $this->sendMail($backend, $account, $survey['history']);
                     }
@@ -839,7 +853,7 @@ class Boobank
                     $survey['history'] = array_reverse($survey['history']);
                     foreach ($survey['history'] as $row) {
                         $i = $this->database->addTransaction($backend, $account, $row);
-                        if($i) {
+                        if ($i) {
                             $inserts++;
                         }
                     }
@@ -855,11 +869,14 @@ class Boobank
         ];
     }
 
-    public function sendMail($backend, $account, $rows, $model = "history") {
+    public function sendMail($backend, $account, $rows, $model = "history")
+    {
+        $backendParams = $this->getBackend($backend);
+
         $message = (new \Swift_Message('[RYUKENTEAM WATCH] Survey Bank for you and found new transactions'))
             ->setFrom($this->mailAdmin)
-            ->setTo('sam.chatouille@gmail.com');
-        if($model === "history") {
+            ->setTo($backendParams['mail']);
+        if ($model === "history") {
             $message->setBody(
                 $this->twig->render("SamKerBoobankBundle:Mail:history.html.twig", ["account" => $account, "list" => $rows]),
                 'text/html'
@@ -870,8 +887,7 @@ class Boobank
                 $this->twig->render("SamKerBoobankBundle:Mail:list.html.twig", ["account" => $account, "list" => $rows]),
                 'text/html'
             );
-        }
-            /*
+        }/*
              * If you also want to include a plaintext version of the message
             ->addPart(
                 $this->renderView(
@@ -880,8 +896,7 @@ class Boobank
                 ),
                 'text/plain'
             )
-            */
-        ;
+            */;
         $this->mailer->send($message);
 
     }

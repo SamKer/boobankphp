@@ -27,25 +27,55 @@ class BoobankWatchEditCommand extends ContainerAwareCommand
         $helper = $this->getHelper('question');
 
 
+        if(!$backend ||!$account) {
+            throw new \Exception("a backend & account must be defined with -a & -b options");
+        }
+
+
         $boobank = $this->getContainer()->get('boobank');
 
         $rules = $boobank->getWatchRules($backend, $account);
 
-        $output->writeln('survey config:');
-        $question = new Question('new survey history:', $rules['survey']['history']);
+
+        $output->writeln("current config for $backend:$account:");
+        dump($rules);
+
+        $output->writeln('------------new survey config definition----------:');
+        $question = new Question($rules['survey']['history'] . '<= survey.history:(true|false)?  ', $rules['survey']['history']);
+        $question->setValidator(function ($value) {
+            if (trim($value) === 'true' || trim($value) === "1") {
+                return true;
+            }
+            return false;
+        });
         $rules['survey']['history'] = $helper->ask($input, $output, $question);
 
-        $output->writeln('survey config:');
-        $question = new Question('new survey list:', $rules['survey']['list']);
+        $question = new Question($rules['survey']['list'] . '<= survey.list:(true|false)?  ', $rules['survey']['list']);
+        $question->setValidator(function ($value) {
+            if (trim($value) === 'true' || trim($value) === "1") {
+                return true;
+            }
+            return false;
+        });
         $rules['survey']['list'] = $helper->ask($input, $output, $question);
 
 
-        $output->writeln('action config:');
-        $question = new Question('new action database:', $rules['action']['database']);
+        $question = new Question($rules['action']['database'] . '<= action.database:(true|false)?  ', $rules['action']['database']);
+        $question->setValidator(function ($value) {
+            if (trim($value) === 'true' || trim($value) === "1") {
+                return true;
+            }
+            return false;
+        });
         $rules['action']['database'] = $helper->ask($input, $output, $question);
 
-        $output->writeln('action config:');
-        $question = new Question('new action mail:', $rules['action']['mail']);
+        $question = new Question($rules['action']['mail'] . '<= action.mail:(true|false)?  ', $rules['action']['mail']);
+        $question->setValidator(function ($value) {
+            if (trim($value) === 'true' || trim($value) === "1") {
+                return true;
+            }
+            return false;
+        });
         $rules['action']['mail'] = $helper->ask($input, $output, $question);
 
 
