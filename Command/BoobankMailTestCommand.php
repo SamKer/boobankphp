@@ -25,7 +25,7 @@ class BoobankMailTestCommand extends ContainerAwareCommand
     {
         $boobank = $this->getContainer()->get('boobank');
         $boobank->sendMail("test","123456789", [
-            0 => ["date"=>"2015-02-01", "label"=>"virment quelconque", "amount"=>123.4],
+            0 => ["date"=>"2015-02-01", "label"=>"virement quelconque", "amount"=>123.4],
             1 => ["date"=>"2015-04-01", "label"=>"virement autres", "amount"=>456.7]
         ]);
 
