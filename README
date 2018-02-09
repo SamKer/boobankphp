@@ -27,7 +27,7 @@ Open a command console, enter your project directory and execute the
 following command to download the latest stable version of this bundle:
 
 ```console
-$ composer require SamKer/boobankphp "~1"
+$ composer require samker/boobankbundle
 ```
 
 This command requires you to have Composer installed globally, as explained
@@ -66,8 +66,15 @@ default boobank command at /usr/bin
 but you can define another bin path in parameters.yml
 ```yml
   boobank:
-        bin_path:"/var/www/.local/venvs/weboob/bin" #or /usr/bin
-        dateInterval: "P30D" #interval date default
+        bin_path: "/var/www/.local/venvs/weboob/bin" #bin path for weboob weboob-config & boobank
+        database: true
+        dateInterval: "P1D" #interval for history
+        filters:
+              history: [ "date", "label", "amount" ]
+              list: [ "label", "balance" ]
+        watch: #default rules for watch by cron, 0 */1 * * * * www-data  php -f path/to/console --
+              survey: [ "history", "list" ] #history or just list global 'amount' or both
+              action: [ "database", "mail" ] #action mail or database or both
 ```
         
 Step 4: Registered commands
