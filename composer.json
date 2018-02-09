@@ -1,5 +1,5 @@
 {
-  "name" : "SamKer/boobankbundle",
+  "name" : "samker/boobankbundle",
   "description" : "tools for boobank",
   "version":"1.2.0",
   "minimum-stability": "dev",
