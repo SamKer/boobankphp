@@ -1,7 +1,7 @@
 {
   "name" : "samker/boobankbundle",
   "description" : "tools for boobank",
-  "version":"1.2.1",
+  "version":"1.2.2",
   "minimum-stability": "dev",
   "type" : "symfony-bundle",
   "authors" : [{
