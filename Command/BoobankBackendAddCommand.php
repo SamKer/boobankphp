@@ -52,7 +52,10 @@ class BoobankBackendAddCommand extends ContainerAwareCommand
         $question->setHiddenFallback(false);
         $password = $helper->ask($input, $output, $question);
 
-        $boobank->addBackend($backend, $module, $login, $password);
+        $question = new Question('Please enter the mail for ' . $backend . ': ', false);
+        $mail = $helper->ask($input, $output, $question);
+
+        $boobank->addBackend($backend, $module, $login, $password, $mail);
 
         $output->writeln("backend created");
     }

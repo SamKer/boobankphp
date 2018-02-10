@@ -1,7 +1,8 @@
 {
   "name" : "samker/boobankbundle",
-  "description" : "tools for boobank",
-  "version":"1.4.0",
+  "description" : "tools for use boobank (module of super Weboob) in PHP with symfony",
+  "version":"1.4.1",
+  "licence": "GPL-3.0-or-later",
   "type" : "symfony-bundle",
   "authors" : [{
     "name" : "samir.keriou",

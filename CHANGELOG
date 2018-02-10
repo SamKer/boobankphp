@@ -1,6 +1,15 @@
--- v-1.0.0
-* list & history command
-* filters parameters
--- v-0.0.1
-* backend list, add, remove
-* account list
+v1.4.1
+- fix mail needed in boobbank add backend
+- add licence
+---
+v1.4.0
+- fix packagist 
+- fix vendor 
+---
+v1.0.0
+- list & history command
+- filters parameters
+---
+v0.0.1
+- backend list, add, remove
+- account list

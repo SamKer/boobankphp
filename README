@@ -76,7 +76,20 @@ but you can define another bin path in parameters.yml
               survey: [ "history", "list" ] #history or just list global 'amount' or both
               action: [ "database", "mail" ] #action mail or database or both
 ```
-        
+
+Step 4: import config
+-------------------------
+add this line to imports in config.yml file:
+```yml
+    - { resource: "/var/www/ryukenteam/vendor/samker/boobankbundle/Resources/config/config.yml" }   
+```
+       
+Step 5: database
+------------------------
+```bash
+sudo -u www-data php -f /path/to/project/bon/console -- doctrine:schema:update --force
+```       
+
 Step 4: Registered commands
 --------------------------
 you can use command line as follow
