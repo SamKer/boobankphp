@@ -1,7 +1,7 @@
 {
   "name" : "samker/boobankbundle",
   "description" : "tools for boobank",
-  "version":"1.2.3",
+  "version":"1.4.0",
   "type" : "symfony-bundle",
   "authors" : [{
     "name" : "samir.keriou",
