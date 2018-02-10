@@ -1,7 +1,7 @@
 {
   "name" : "samker/boobankbundle",
   "description" : "tools for boobank",
-  "version":"1.2.2",
+  "version":"1.2.3",
   "minimum-stability": "dev",
   "type" : "symfony-bundle",
   "authors" : [{
@@ -19,7 +19,8 @@
   },
   "autoload" : {
     "psr-0" : {
-      "SamKer\\BoobankBundle" : "vendor/samker/boobanbundle/"
+      "SamKer\\BoobankBundle" : "vendor/samker/boobankbundle"
     }
-  }
+  },
+  "target-dir" : ""
 }
