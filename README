@@ -17,8 +17,10 @@ $ source ~/.local/venvs/weboob/bin/activate
 $
 
 
-## installation bundle
-
+## installation boobankphp
+```console
+sudo apt install php7.3-cli php7.3-intl
+```
 
 Step 1: Download the Bundle
 ---------------------------
@@ -27,11 +29,11 @@ Open a command console, enter your project directory and execute the
 following command to download the latest stable version of this bundle:
 
 ```console
-$ composer require samker/boobankbundle
+$ composer require samker/boobankphp
 ```
 
 This command requires you to have Composer installed globally, as explained
-in the [installation chapter](https://getcomposer.org/doc/00-intro.md)
+in the [installation chapter](https://getcomposer.org/doc/00-intro.md)c 
 of the Composer documentation.
 
 Step 2: Enable the Bundle

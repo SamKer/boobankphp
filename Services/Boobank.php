@@ -1,6 +1,6 @@
 <?php
 
-namespace SamKer\BoobankBundle\Services;
+namespace SamKer\BoobankPHP\Services;
 
 use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\Filesystem\Filesystem;
@@ -190,85 +190,35 @@ class Boobank
      * crée le dossier local boobank pour d'éventuels exports
      *
      * @param Shell $shell
-     * @param array $params
-     * @param Database $database
+     * @param Config $config
      * @param \Swift_Mailer $mailer
-     * @params string $mailAdmin
+     * @params \Twig_Environment $twig
      */
-    public function __construct(Shell $shell, $params = [], Database $database, \Swift_Mailer $mailer, $mailAdmin, \Twig_Environment $twig)
+    public function __construct(Shell $shell, Config $config, \Swift_Mailer $mailer, \Twig_Environment $twig)
     {
         // dependances
         $this->shell = $shell;
 
         $this->mailer = $mailer;
-        $this->mailAdmin = $mailAdmin;
+        $this->mailAdmin = $config->params['mail_admin'];
         $this->twig = $twig;
 
         $this->fs = new Filesystem();
-
-        //params---------------------------------------------
-        $this->params = array_merge_recursive($this->params, $params);
-        //fix to merge simple value
-        if (is_array($this->params['bin_path'])) {
-            $this->params['bin_path'] = array_pop($this->params['bin_path']);
-        }
-        if (is_array($this->params['dateInterval'])) {
-            $this->params['dateInterval'] = array_pop($this->params['dateInterval']);
-        }
-        if (is_array($this->params['database'])) {
-            $this->params['database'] = array_pop($this->params['database']);
-        }
-        //--------------------------------------------------
-
-        //data saved in base
-        if ($this->params['database'] === true) {
-            $this->database = $database;
-        }
+        $this->params = $config->testConfig(true);
 
         //define pathcommands-----------
 
-        $this->cmdPathWeboob = $this->params["bin_path"] . "/weboob";
-        if (!$this->fs->exists($this->cmdPathWeboob)) {
-            throw new \Exception("class php Boobank needs weboob command");
-        }
-
-
-        $this->cmdPathWeboobConfig = $this->params["bin_path"] . "/weboob-config";
-        if (!$this->fs->exists($this->cmdPathWeboobConfig)) {
-            throw new \Exception("class php Boobank needs weboob-config command");
-        }
-
-
-        $this->cmdPathBoobank = $this->params["bin_path"] . "/boobank";
-        if (!$this->fs->exists($this->cmdPathBoobank)) {
-            throw new \Exception("class php Boobank needs boobank command");
-        }
+        $this->cmdPathWeboob = $this->params["binaries"]['weboob'];
+        $this->cmdPathWeboobConfig = $this->params["binaries"]['weboob-config'];
+        $this->cmdPathBoobank = $this->params["binaries"]['boobank'];
 
         //----------
 
-        //setting home
-        $home = $this->shell->home();
-        if (!$this->fs->exists($home)) {
-            throw new \Exception("no home dir at" . $home);
-        }
-        if (!$this->fs->exists($home . "/.config")) {
-            $this->fs->mkdir($home . "/.config");
-        }
-        if (!$this->fs->exists($home . "/.config/weboob")) {
-            $this->fs->mkdir($home . "/.config/weboob");
-        }
-
         //backend created by weboob at backend
-        $this->sBackendsPath = $this->shell->home() . "/.config/weboob/backends";
-        if (!$this->fs->exists($this->sBackendsPath)) {
-            $this->fs->touch($this->sBackendsPath);
-        }
+        $this->sBackendsPath = $this->params['backend_path'];
 
         //specific rules at
-        $this->watchRulesDir = $this->shell->home() . "/.config/weboob/watchrules";
-        if (!$this->fs->exists($this->watchRulesDir)) {
-            $this->fs->mkdir($this->watchRulesDir);
-        }
+        $this->watchRulesDir = $this->params['watch_rules'];
 
         $this->getBackEnds();
     }

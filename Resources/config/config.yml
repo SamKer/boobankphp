@@ -1,11 +1,31 @@
 imports:
     - { resource: services.yml }
 
-#doctrine:
-#    orm:
-#        entity_managers:
-#            default:
-#                mappings:
-#                    SamKerBoobankBundle:
-#                        type: annotation
-#                        mapping: true
+
+
+parameters:
+
+
+    boobank_mail_admin: 'sam.chatouille@gmail.com'
+    boobank_bin_path: "~/.local/venvs/weboob/bin" #bin path for weboob weboob-config & boobank
+    boobank_storage_path: "~/.config/weboob" #storage path for weboob, default in ~/.config/weboob
+    boobank_dateInterval: "P1D" #interval for history
+    boobank_filters: # filters on data returned
+            history: [ "date", "label", "amount" ]
+            list: [ "label", "balance" ]
+    boobank_watch: #exemple rules for watch by cron, 0 */1 * * * * www-data  php -f path/to/console --
+        survey: [ "history", "list" ] #history or just list global 'amount' or both
+        action: [ "database", "mail" ] #action mail or database or both
+
+    boobank:
+            binaries:
+                weboob: "%boobank_bin_path%/weboob"
+                weboob-config: "%boobank_bin_path%/weboob-config"
+                boobank: "%boobank_bin_path%/boobank"
+            storage_path: "%boobank_storage_path%"
+            dateInterval: "%boobank_dateInterval%"
+            filters: "%boobank_filters%"
+            watch: "%boobank_watch%"
+            mail_admin: "%boobank_mail_admin%"
+
+

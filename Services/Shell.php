@@ -1,9 +1,9 @@
 <?php
-namespace SamKer\BoobankBundle\Services;
+namespace SamKer\BoobankPHP\Services;
 
 use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Finder\Finder;
 use Symfony\Component\HttpFoundation\File\File;
+
 
 /**
  * command runner

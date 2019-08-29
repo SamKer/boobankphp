@@ -1,8 +1,9 @@
 <?php
 
-namespace SamKer\BoobankBundle\Command;
+namespace SamKer\BoobankPHP\Command;
 
 use SamKer\BoobankBundle\Services\BooBank;
+use SamKer\BoobankPHP\Services\Command;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -10,17 +11,15 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ChoiceQuestion;
 use Symfony\Component\Console\Question\Question;
 
-class BoobankBackendAddCommand extends ContainerAwareCommand
+class BoobankBackendAdd extends Command
 {
-    /**
-     * @var BooBank
-     */
-    private $boobank;
+
+    protected static $defaultName = 'bbk:backend:add';
+
 
     protected function configure()
     {
         $this
-            ->setName('boobank:backend:add')
             ->setDescription('add backend')
             ->addOption('name', null, InputOption::VALUE_OPTIONAL, 'backend name');
 
@@ -29,7 +28,7 @@ class BoobankBackendAddCommand extends ContainerAwareCommand
     protected function execute(InputInterface $input, OutputInterface $output)
     {
 
-        $boobank = $this->getContainer()->get('boobank');
+        $boobank = $this->boobank;
 
         $helper = $this->getHelper('question');
         $backend = $input->getOption('name');
