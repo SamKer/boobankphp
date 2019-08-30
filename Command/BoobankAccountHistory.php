@@ -1,23 +1,21 @@
 <?php
 
-namespace SamKer\BoobankBundle\Command;
+namespace SamKer\BoobankPHP\Command;
 
 use SamKer\BoobankBundle\Services\Boobank;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use SamKer\BoobankPHP\Services\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class BoobankAccountHistoryCommand extends ContainerAwareCommand
+class BoobankAccountHistory extends Command
 {
-    /**
-     * @var Boobank
-     */
-    private $boobank;
+
+    protected static $defaultName = 'bbk:account:history';
+
     protected function configure()
     {
         $this
-            ->setName('boobank:account:history')
             ->setDescription('get history account')
             ->addOption('backend', "b", InputOption::VALUE_REQUIRED, 'backend name')
             ->addOption('account', "a", InputOption::VALUE_REQUIRED, "account id")
@@ -33,8 +31,6 @@ class BoobankAccountHistoryCommand extends ContainerAwareCommand
         $date = $input->getOption('date');
         $select = $input->getOption('select');
 
-
-        $this->boobank = $this->getContainer()->get('boobank');
 
         $account = $this->boobank->getHistory($account, $backend, $date, $select);
         dump($account);

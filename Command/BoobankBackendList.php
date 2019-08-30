@@ -1,24 +1,23 @@
 <?php
 
-namespace SamKer\BoobankBundle\Command;
+namespace SamKer\BoobankPHP\Command;
 
 use SamKer\BoobankBundle\Services\BooBank;
+use SamKer\BoobankPHP\Services\Command;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class BoobankBackendListCommand extends ContainerAwareCommand
+class BoobankBackendList extends Command
 {
-    /**
-     * @var BooBank
-     */
-    private $boobank;
+
+     protected static $defaultName = 'bbk:backend:list';
+
     protected function configure()
     {
         $this
-            ->setName('boobank:backend:list')
             ->setDescription('list backend')
             ->addOption('name', null, InputArgument::OPTIONAL, 'backend name')
         ;
@@ -28,7 +27,6 @@ class BoobankBackendListCommand extends ContainerAwareCommand
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $backend = $input->getOption('name');
-        $this->boobank = $this->getContainer()->get('boobank');
 
         $list = $this->boobank->getBackEnds();
         if($backend !== null){

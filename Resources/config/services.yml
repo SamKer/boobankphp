@@ -34,3 +34,14 @@ services:
     boobank.command.backendadd:
         class: SamKer\BoobankPHP\Command\BoobankBackendAdd
         arguments: [ "@boobank"]
+
+    boobank.command.backendlist:
+        class: SamKer\BoobankPHP\Command\BoobankBackendList
+        arguments: [ "@boobank"]
+
+    boobank.command.accountlist:
+        class: SamKer\BoobankPHP\Command\BoobankAccountList
+        arguments: [ "@boobank"]
+    boobank.command.accounthistory:
+        class: SamKer\BoobankPHP\Command\BoobankAccountHistory
+        arguments: [ "@boobank"]

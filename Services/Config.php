@@ -75,6 +75,21 @@ class Config
             $b = false;
         }
 
+        //list
+        if (isset($this->params['filters'])) {
+            $test['params']['filters']['present'] = true;
+        } else {
+            $b = false;
+        }
+        if(is_array($this->params['filters'])) {
+            array_push($this->params['filters']['list'], 'id');
+            array_push($this->params['filters']['history'], 'id');
+            $test['params']['filters']['check'] = true;
+        } else {
+            $b = false;
+        }
+
+
         //--------------------------------------------------
 
         //define pathcommands-----------

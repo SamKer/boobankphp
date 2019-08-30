@@ -245,8 +245,6 @@ class Boobank
         //filter for backend
         $csv = $this->parseCSV();
         $list = $this->filter($csv, $backend);
-
-
         return $list;
 
     }
@@ -326,6 +324,7 @@ class Boobank
         $this->aBackEnds[$sIdBackEnd]['_backend'] = $sIdBank;
         $this->aBackEnds[$sIdBackEnd]['login'] = $sLogin;
         $this->aBackEnds[$sIdBackEnd]['password'] = $sPassword;
+        $this->aBackEnds[$sIdBackEnd]['mail'] = $mail;
         //save in file config, used by boobank cmd
         $this->saveBackends();
 

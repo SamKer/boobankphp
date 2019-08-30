@@ -26,5 +26,8 @@ $application = new Application("Boobank PHP", $version);
 // ... register commands
 $application->add($containerBuilder->get('boobank.command.check'));
 $application->add($containerBuilder->get('boobank.command.backendadd'));
+$application->add($containerBuilder->get('boobank.command.backendlist'));
+$application->add($containerBuilder->get('boobank.command.accountlist'));
+$application->add($containerBuilder->get('boobank.command.accounthistory'));
 
 $application->run();
