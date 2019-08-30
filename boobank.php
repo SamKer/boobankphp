@@ -29,5 +29,6 @@ $application->add($containerBuilder->get('boobank.command.backendadd'));
 $application->add($containerBuilder->get('boobank.command.backendlist'));
 $application->add($containerBuilder->get('boobank.command.accountlist'));
 $application->add($containerBuilder->get('boobank.command.accounthistory'));
+$application->add($containerBuilder->get('boobank.command.mailtest'));
 
 $application->run();

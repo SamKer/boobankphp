@@ -2,3 +2,4 @@
 var/
 .env
 vendor/
+config.yml

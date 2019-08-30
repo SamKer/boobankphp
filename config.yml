@@ -1,8 +1,0 @@
-imports:
-    - { resource: './Resources/config/config.yml' }
-
-
-#overwriting params from here
-parameters:
-        boobank_bin_path: "/home/sam/.local/venvs/weboob/bin" #bin path for weboob weboob-config & boobank
-        boobank_storage_path: "/home/sam/.config/weboob" #storage path for weboob, default in ~/.config/weboob

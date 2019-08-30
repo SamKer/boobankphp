@@ -10,7 +10,7 @@ services:
 
     boobank.mailer.transport:
         class: \Swift_SmtpTransport
-        arguments: [ "hello" , 25 ]
+        arguments: [ "%boobank_mail_server%" , "%boobank_mail_port%", "%boobank_mail_encryption%" ]
 
     boobank.mailer:
         class: \Swift_Mailer
@@ -18,6 +18,7 @@ services:
 
     boobank.twig.loader:
         class: \Twig_Loader_Filesystem
+        arguments: [ "%boobank_template_path%"]
 
     boobank.twig:
         class: \Twig_Environment
@@ -44,4 +45,8 @@ services:
         arguments: [ "@boobank"]
     boobank.command.accounthistory:
         class: SamKer\BoobankPHP\Command\BoobankAccountHistory
+        arguments: [ "@boobank"]
+
+    boobank.command.mailtest:
+        class: SamKer\BoobankPHP\Command\BoobankMailTest
         arguments: [ "@boobank"]

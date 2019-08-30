@@ -6,7 +6,13 @@ imports:
 parameters:
 
 
-    boobank_mail_admin: 'sam.chatouille@gmail.com'
+    boobank_mail_admin: 'nimporte.nawak@gmail.com'
+    boobank_mail_server: 'nimporte.nawak.en.smtp@qq.fr'
+    boobank_mail_port: 25
+    boobank_mail_encryption: 'SSL/TLS'
+    boobank_mail_authmode: 'login'
+    boobank_mail_username: 'yourlogin'
+    boobank_mail_password: 'yourpassord'
     boobank_bin_path: "~/.local/venvs/weboob/bin" #bin path for weboob weboob-config & boobank
     boobank_storage_path: "~/.config/weboob" #storage path for weboob, default in ~/.config/weboob
     boobank_dateInterval: "P1D" #interval for history
@@ -16,6 +22,7 @@ parameters:
     boobank_watch: #exemple rules for watch by cron, 0 */1 * * * * www-data  php -f path/to/console --
         survey: [ "history", "list" ] #history or just list global 'amount' or both
         action: [ "database", "mail" ] #action mail or database or both
+    boobank_template_path: "~/boobankphp/Resources/views/mail"
 
     boobank:
             binaries:
@@ -26,6 +33,13 @@ parameters:
             dateInterval: "%boobank_dateInterval%"
             filters: "%boobank_filters%"
             watch: "%boobank_watch%"
-            mail_admin: "%boobank_mail_admin%"
+            mail:
+                admin: "%boobank_mail_admin%"
+                server: "%boobank_mail_server%"
+                port: "%boobank_mail_port%"
+                encryption: "%boobank_mail_encryption%"
+                authmode: "%boobank_mail_authmode%"
+                username: "%boobank_mail_username%"
+                password: "%boobank_mail_password%"
 
 

@@ -200,11 +200,16 @@ class Boobank
         $this->shell = $shell;
 
         $this->mailer = $mailer;
-        $this->mailAdmin = $config->params['mail_admin'];
+        $mailer->getTransport()
+            ->setUsername($config->params['mail']['username'])
+            ->setPassword($config->params['mail']['password']);
+        $this->mailAdmin = $config->params['mail']['admin'];
         $this->twig = $twig;
 
         $this->fs = new Filesystem();
         $this->params = $config->testConfig(true);
+
+
 
         //define pathcommands-----------
 
@@ -835,13 +840,13 @@ class Boobank
             ->setTo($backendParams['mail']);
         if ($model === "history") {
             $message->setBody(
-                $this->twig->render("SamKerBoobankBundle:Mail:history.html.twig", ["account" => $account, "list" => $rows]),
+                $this->twig->render("history.html.twig", ["account" => $account, "list" => $rows]),
                 'text/html'
             );
         } else {
             $rows['date'] = (new \DateTime())->format('Y-m-d');
             $message->setBody(
-                $this->twig->render("SamKerBoobankBundle:Mail:list.html.twig", ["account" => $account, "list" => $rows]),
+                $this->twig->render("list.html.twig", ["account" => $account, "list" => $rows]),
                 'text/html'
             );
         }/*
